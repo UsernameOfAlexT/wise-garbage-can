@@ -1,0 +1,14 @@
+{
+  "name": "pearl-of-wisdom",
+  "version": "1.0.0",
+  "description": "Experimental Bot that does mostly useless things",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "UsernameOfAlexT",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.3.1"
+  }
+}
