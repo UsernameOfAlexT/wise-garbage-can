@@ -4,11 +4,19 @@
   "description": "Experimental Bot that does mostly useless things",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UsernameOfAlexT/wise-garbage-can.git"
   },
   "author": "UsernameOfAlexT",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^12.3.1"
+  },
+  "engines": {
+    "node": "14.8.x"
   }
 }
