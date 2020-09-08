@@ -1,4 +1,4 @@
-const {oracle_defaults_array} = require('../config.json');
+const {oracle_defaults_array} = require('../defaultlists.json');
 const utils = require('../utils.js')
 
 module.exports = {

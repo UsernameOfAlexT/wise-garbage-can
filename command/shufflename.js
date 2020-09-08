@@ -1,4 +1,4 @@
-const {master_name_array} = require('../config.json');
+const {master_name_array} = require('../defaultlists.json');
 const utils = require('../utils.js')
 
 module.exports = {
