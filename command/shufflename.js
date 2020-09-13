@@ -3,7 +3,7 @@ const utils = require('../utils.js')
 
 module.exports = {
   name: 'shufflename',
-  cd: 3,
+  cd: 10,
   desc: 'Randomize Nicknames',
   disallowDm: true,
   execute(msg, args) {

@@ -4,6 +4,7 @@ const Discord = require('discord.js');
 const bot_token = process.env.BOT_TOKEN;
 const prefix = process.env.CMD_PREFIX;
 const client = new Discord.Client();
+const cooldowns = new Discord.Collection();
 
 client.commands = new Discord.Collection();
 // get all files in commands, then reduce to only things ending in .js
@@ -37,9 +38,36 @@ client.on('message', message => {
 
   const command = client.commands.get(commandName);
 
+  // DM checking
   if (command.disallowDm && message.channel.type === 'dm') {
     return message.reply(`${commandName}, you can\'t use that here`);
   }
+
+  // Owner only checking
+  if (command.ownerOnly && !(message.author.id === message.guild.ownerID)) {
+    return message.reply(`${commandName}\'s power can be used only by the server owner`)
+  }
+
+  // checking cooldowns to prevent spam
+  if (!cooldowns.has(command.name)) {
+    cooldowns.set(command.name, new Discord.Collection());
+  }
+
+  const now = Date.now();
+  const timestamps = cooldowns.get(command.name);
+  const cdTime = (command.cd || 3) * 1000;
+
+  // get the actual time the cd expires and respond if not yet time
+  if (timestamps.has(message.author.id)) {
+    const expireTime = timestamps.get(message.author.id) + cdTime;
+
+    if (now < expireTime) {
+      const left = (expireTime - now) / 1000;
+      return message.reply(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
+    }
+  }
+  timestamps.set(message.author.id, now);
+  setTimeout(() => timestamps.delete(message.author.id), cdTime);
 
   try {
     command.execute(message, args);
