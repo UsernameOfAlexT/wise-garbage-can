@@ -1,4 +1,4 @@
-const {master_name_array} = require('../defaultlists.json');
+const {master_name_array, tithetaker_responses} = require('../defaultlists.json');
 const utils = require('../utils.js');
 const DEF_TIME = 5;
 const MAX_WAIT_TIME = 600;
@@ -60,20 +60,23 @@ function titheHandler(msg, args, titheAuthor) {
   msgToBuild.push(`This tithe will be collected in ${timeUntilTithe} seconds(s).`);
 
   msg.channel.send(msgToBuild)
-  .then(titheMsg => {
+    .then(titheMsg => {
       msg.delete()
-      .catch(() => {
-        msg.reply('I have failed to delete the original tithe');
-      })
+        .catch(() => {
+          msg.reply('I have failed to delete the original tithe');
+        })
 
-      titheMsg.delete({timeout : timeUntilTithe * 1000})
-      .then(() => {
-        msg.reply(`Your tithe has been collected by ${titheTaker(master_name_array)}`);
-      })
-      .catch(() => {
-        msg.reply('I have failed in my duty to collect this tithe');
-      });
-  });
+      titheMsg.delete({ timeout: timeUntilTithe * 1000 })
+        .then(() => {
+          titheMsg = [];
+          titheMsg.push(`Your tithe has been collected by ${titheTaker(master_name_array)}`);
+          titheMsg.push(`${titheTaker(tithetaker_responses)}`);
+          msg.reply(titheMsg);
+        })
+        .catch(() => {
+          msg.reply('I have failed in my duty to collect this tithe');
+        });
+    });
 }
 
 function titheTaker(choices) {
