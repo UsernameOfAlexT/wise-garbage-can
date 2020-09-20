@@ -3,6 +3,7 @@ const utils = require('../utils.js')
 
 module.exports = {
   name: 'theoracle',
+  aliases: ['oracle'],
   cd: 3,
   desc: 'Figure out what to do with your life by letting me choose from a list',
   disallowDm: false,

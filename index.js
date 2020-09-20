@@ -32,11 +32,11 @@ client.on('message', message => {
   const commandName = args.shift().toLowerCase();
 
   // do we actually have this command?
-  if (!client.commands.has(commandName)) {
+  const command = client.commands.get(commandName)
+    || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+  if (!command) {
     return;
   }
-
-  const command = client.commands.get(commandName);
 
   // DM checking
   if (command.disallowDm && message.channel.type === 'dm') {
@@ -73,7 +73,7 @@ client.on('message', message => {
     command.execute(message, args);
   } catch (error) {
     console.error(error);
-    message.reply(`${commandName} failed. Something went wrong`);
+    message.reply(`${commandName} failed. Something went wrong. Contact Dev and yell at them to fix this`);
   }
 });
 

@@ -1,5 +1,6 @@
 module.exports = {
   name: 'movietime',
+  aliases: ['mvt'],
   cd: 10,
   desc: 'Open/close this channel for movie time',
   disallowDm: true,
