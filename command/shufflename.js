@@ -6,6 +6,7 @@ module.exports = {
   cd: 10,
   desc: 'Randomize Nicknames',
   disallowDm: true,
+  needSendPerm: true,
   execute(msg, args) {
 
 

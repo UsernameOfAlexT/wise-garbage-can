@@ -7,6 +7,7 @@ module.exports = {
   cd: 3,
   desc: 'Figure out what to do with your life by letting me choose from a list',
   disallowDm: false,
+  needSendPerm: true,
   usage: '[option1] [option2] ...',
   execute(msg, args) {
     let choices = oracle_defaults_array;

@@ -43,6 +43,20 @@ client.on('message', message => {
     return message.reply(`${commandName}, you can\'t use that here`);
   }
 
+  // permissions checking for sending messages (a basic requirement)
+  if (command.needSendPerm && !(message.channel.type === 'dm')
+    && !(message.channel.permissionsFor(client.user).has('SEND_MESSAGES'))) {
+    const msgToBuild = [];
+    msgToBuild.push(`I was going to execute ${commandName}`);
+    msgToBuild.push('But, I need permission to send messages in the channel you requested it');
+    msgToBuild.push('Give me permission so I can meaningfully perform it.');
+    msgToBuild.push('Or, if the command was going to grant permission, it may just be on cooldown.');
+    return message.author.send(msgToBuild, { split: true })
+      .catch(err => {
+        console.error(`${message.author.tag} failed to DM with permission warning. \n`, err);
+      });
+  }
+
   // Owner only checking
   if (command.ownerOnly && !(message.author.id === message.guild.ownerID)) {
     return message.reply(`${commandName}\'s power can be used only by the server owner`)
@@ -63,7 +77,17 @@ client.on('message', message => {
 
     if (now < expireTime) {
       const left = (expireTime - now) / 1000;
-      return message.reply(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
+      return message.reply(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`)
+        .catch(() => {
+          // most likely culprit is missing permissions, so try to DM
+          const msgToBuild = [];
+          msgToBuild.push('I am DMing you because I lack permission to respond in the channel you requested me from');
+          msgToBuild.push(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
+          message.author.send(msgToBuild, { split: true })
+            .catch(err => {
+              console.error(`${message.author.tag} failed to DM with permission warning. \n`, err);
+            });
+        });
     }
   }
   timestamps.set(message.author.id, now);
