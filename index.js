@@ -3,7 +3,17 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const bot_token = process.env.BOT_TOKEN;
 const prefix = process.env.CMD_PREFIX;
-const client = new Discord.Client();
+
+const intentsUsed = new Discord.Intents(Discord.Intents.ALL);
+intentsUsed.remove([
+  'GUILD_BANS',
+  'GUILD_PRESENCES',
+  'GUILD_INVITES',
+  'GUILD_INTEGRATIONS',
+  'GUILD_WEBHOOKS'
+]);
+
+const client = new Discord.Client({ ws: { intents: intentsUsed } });
 const cooldowns = new Discord.Collection();
 
 client.commands = new Discord.Collection();
