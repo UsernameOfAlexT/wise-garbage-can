@@ -33,3 +33,26 @@ exports.pickRandomly = function (choices) {
   let choiceItem = exports.pickSafely(choseni, choices);
   return choiceItem;
 }
+
+/**
+ * Pick up to n random unique choices from the given list.
+ * If n is greater than the length of the list, then just returns
+ * the contents of the list in a random order
+ * 
+ * @param {Array} choices 
+ * @param {number} n
+ */
+// TODO untested. probably something wrong with it somehow
+exports.choose = function (choices, n) {
+  const chosenItems = [];
+
+  for (let m = 0; m < n; m++) {
+    let choseni = exports.randomInt(choices.length);
+    chosenItems.push(choices[choseni]);
+    choices.splice(choseni, 1);
+    if (choices.length === 0) {
+      break;
+    }
+  }
+  return chosenItems;
+}

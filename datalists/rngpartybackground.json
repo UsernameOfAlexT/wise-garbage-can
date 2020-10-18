@@ -1,0 +1,39 @@
+{
+  "status": [
+    "Mysterious Stranger",
+    "Walking Disaster",
+    "Warrior",
+    "Walking Corpse",
+    "Phantom",
+    "Interloper",
+    "Demon",
+    "Divine Being",
+    "Drunkard",
+    "Villager",
+    "Expendable Mook",
+    "Champion",
+    "Hero"
+  ],
+  "origins": [
+    "from parts unknown",
+    "from over yonder hill",
+    "from a foreign land",
+    "from across the Great Seas",
+    "from the future",
+    "from the past",
+    "from an alternate reality",
+    "from outside time",
+    "from beneath the earth",
+    "sent by unseen forces",
+    "sent by some guys you met during Summer Break",
+    "sent by the Faceless Council",
+    "sent by unseen horses",
+    "sent by the Lord of the Realm",
+    "sent by the Gods",
+    "created in a marsh",
+    "created in a laboratory",
+    "created in an outhouse",
+    "woven from the fabric of the universe itself",
+    "found lying by the side of the road"
+  ]
+}

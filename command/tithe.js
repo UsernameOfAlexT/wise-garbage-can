@@ -78,7 +78,7 @@ function titheHandler(msg, args, titheAuthor) {
         });
     });
 }
-
+// todo replace all instances of this w/ the utils ver
 function titheTaker(choices) {
   let choseni = utils.randomInt(choices.length);
   let subject = utils.pickSafely(choseni, choices);
