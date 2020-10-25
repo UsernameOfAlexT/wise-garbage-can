@@ -6,7 +6,7 @@ const GUILD_SELECTION_CHANCE = 25;
 
 module.exports = {
   name: 'emojieightball',
-  aliases: ['mojiball', 'emoji8ball'],
+  aliases: ['mojiball', 'emoji8ball', 'e8ball'],
   cd: 5,
   desc: 'Ask the emojic 8 ball a question',
   disallowDm: true,
