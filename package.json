@@ -14,7 +14,9 @@
   "author": "UsernameOfAlexT",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/opus": "^0.3.3",
     "discord.js": "^12.3.1",
+    "ffmpeg-static": "^4.2.7",
     "mtgsdk": "^0.4.3"
   },
   "engines": {
