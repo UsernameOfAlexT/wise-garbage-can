@@ -1,8 +1,13 @@
 const vcsfxsupp = require('./vcsfxsupport/vcsfxsupp.js');
 const utils = require('../utils.js');
+const envutils = require('../envutils.js');
 const fs = require('fs');
 // NOTE: this seems to need to be relative to index, and not this module
 const REL_PATH_TO_SOUND_DIR = 'sound/';
+const EXACT_SOUND_PREFIX = '*';
+// disable excessive logging in prod
+const DETAILED_LOGGING = !envutils.isProdEnv();
+
 /**
  * Static Audio files stored locally for now.
  * Not a huge mission critical app so S3 and stuff is kinda overkill
@@ -12,19 +17,21 @@ const REL_PATH_TO_SOUND_DIR = 'sound/';
 module.exports = {
   name: 'vcsfx',
   aliases: ['vsfx', 'vcfx'],
-  cd: 6,
-  desc: 'Play some random sounds in the voice channel you are in. Very annoying! ' 
-  + 'Use \'vcsfx tags\' to see tag options to filter',
+  cd: 11,
+  desc: 'Play some random sounds in the voice channel you are in. Very annoying! '
+    + 'Use \'vcsfx tags\' to see tag options to filter. '
+    + 'Use \'vcsfx names\' to see names to use if getting an exact sound '
+    + '\nUse \' ' + EXACT_SOUND_PREFIX + ' \' to indicate an exact sound is desired '
+    + 'for example:  \'vcsfx ' + EXACT_SOUND_PREFIX + 'jumpbus\'' 
+    + '\n(Applies to first argument only, all others ignored if this is given)',
   disallowDm: true,
   needSendPerm: true,
   usage: '{optional tags}',
   execute(msg, args) {
-    if (args[0] && args[0].toLowerCase() === 'tags') {
-      const msgToBuild = [];
-      vcsfxsupp.tags.forEach((val, key) => {
-        msgToBuild.push(`Tag: ${val.tagname} | Description: ${val.desc}`);
-      });
-      return msg.author.send(msgToBuild, { split : true});
+    // handle various informational commands
+    const infomsg = handleInfoCommands(args);
+    if (infomsg.length) {
+      return msg.author.send(infomsg, { split: true });
     }
 
     if (!msg.channel.guild.available) { return; }
@@ -37,10 +44,10 @@ module.exports = {
     }
 
     // decide what ought to be played
-    const fileToPlay = !args.length ? randomSfx() : sfxBasedOnTag(args);
+    const fileToPlay = !args.length ? randomSfx() : specificSfx(args);
 
     if (!fileToPlay) {
-      return msg.reply('No matches. Use \'vcsfx tags\' to see options');
+      return msg.reply('No matches. Use \'vcsfx tags\' or \'vcsfx names\'');
     }
     // use fs to check validity. connection.play will handle invalid inputs fine
     // but some feedback is good for debug/ux/whatever
@@ -53,36 +60,74 @@ module.exports = {
     });
     // when two things try to play at once, it just overrides the older
     msg.member.voice.channel.join()
-    .then(connection => {
-      // NOTE: if the file[path] is invalid then this just finishes immediately
-      const dispatch = connection.play(fileToPlay, { volume: 0.8});
-      dispatch.on('start', () => {
-          console.log(`I should be playing ${fileToPlay} now`);
-      });
-      dispatch.on('error', () => {
-        msg.reply('We had some trouble playing that one. Try again later.');
-        console.log(`Error while playing ${fileToPlay}`);
-        connection.disconnect();
-      });
-      dispatch.on('finish', () => {
-        console.log(`I should be done playing ${fileToPlay} now`);
-        connection.disconnect();
-      });
-    })
-    .catch(err => {
+      .then(connection => {
+        // NOTE: if the file[path] is invalid then this just finishes immediately
+        const dispatch = connection.play(fileToPlay, { volume: 0.8 });
+        dispatch.on('start', () => {
+          if (DETAILED_LOGGING) {
+            console.log(`I should be playing ${fileToPlay} now`);
+          }
+        });
+        dispatch.on('error', () => {
+          msg.reply('We had some trouble playing that one. Try again later.');
+          console.log(`Error while playing ${fileToPlay}`);
+          connection.disconnect();
+        });
+        dispatch.on('finish', () => {
+          if (DETAILED_LOGGING) {
+            console.log(`I should be done playing ${fileToPlay} now`);
+          }
+          connection.disconnect();
+        });
+      })
+      .catch(err => {
         msg.reply('Something went wrong while joining voice. Try again later');
         console.log(`Error joining voice: ${err}`);
-    });
-    
+      });
+
   }
 }
 
+function handleInfoCommands(args) {
+  const msgToBuild = [];
+  if (!args[0]) {
+    return msgToBuild;
+  }
+
+  if (args[0].toLowerCase() === 'tags') {
+    vcsfxsupp.tagsToDesc.forEach((val, key) => {
+      msgToBuild.push(`Tag: ${key} | Description: ${val}`);
+    });
+  }
+
+  if (args[0].toLowerCase() === 'names') {
+    vcsfxsupp.sfxsupp.forEach((soundobj, commonname) => {
+      msgToBuild.push(`Sound Name: ${commonname} | Description: ${soundobj.desc}`);
+    });
+  }
+
+  return msgToBuild;
+}
+
 function randomSfx() {
-  return randomSfxFromList(vcsfxsupp.sfxsupp);
+  return randomSfxFromList([...vcsfxsupp.sfxsupp.values()]);
+}
+
+function specificSfx(args) {
+  // there should be at least one arg in this case
+  return args[0].startsWith(EXACT_SOUND_PREFIX)
+    ? sfxBasedOnExactName(args[0].slice(EXACT_SOUND_PREFIX.length))
+    : sfxBasedOnTag(args);
+}
+
+function sfxBasedOnExactName(name) {
+  const vsfxobj = vcsfxsupp.sfxsupp.get(name);
+  return vsfxobj ? buildPathToSound(vsfxobj) : undefined;
 }
 
 function sfxBasedOnTag(taglist) {
-  const matchingSfx = vcsfxsupp.sfxsupp.filter(sfxitem => {
+  const sfxobjlist = [...vcsfxsupp.sfxsupp.values()];
+  const matchingSfx = sfxobjlist.filter(sfxitem => {
     return sfxitem.tags.some(tag => {
       return taglist.includes(tag);
     });

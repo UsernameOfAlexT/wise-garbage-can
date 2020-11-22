@@ -9,7 +9,8 @@ To work, it needs to get a bot token to login with and a prefix to look for to i
 
 The .env file to get it to work with Heroku just needs to exist in the same directory as index.js and contain: <br>
 BOT_TOKEN="token-used-to-login-here" <br>
-CMD_PREFIX="!" (or any other desired command prefix)
+CMD_PREFIX="!" (or any other desired command prefix) <br>
+ENV="test" (case insensitive indicator of environment. One of 'prod' or 'test')
 
 After installing dependencies via npm install:
 ~~~

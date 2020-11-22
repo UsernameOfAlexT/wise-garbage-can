@@ -42,7 +42,6 @@ exports.pickRandomly = function (choices) {
  * @param {Array} choices 
  * @param {number} n
  */
-// TODO untested. probably something wrong with it somehow
 exports.choose = function (choices, n) {
   const chosenItems = [];
 

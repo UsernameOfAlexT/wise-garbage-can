@@ -1,108 +1,81 @@
-// dunno if tagname is really needed but it looks cleaner to me
-exports.tags = new Map()
-  .set("what", {
-    "tagname": 'what',
-    "desc": 'Expressions of your confusion'
-  })
-  .set("short", {
-    "tagname": 'short',
-    "desc": 'Short soundbites'
-  })
-  .set("long", {
-    "tagname": 'long',
-    "desc": 'Longer soundbites'
-  })
-  .set("nonsense", {
-    "tagname": 'nonsense',
-    "desc": 'Stuff that makes no sense'
-  })
-  .set("fightme", {
-    "tagname": 'fightme',
-    "desc": 'Fight me'
-  })
-  .set("lol", {
-    "tagname": 'lol',
-    "desc": 'Laugh at the misfortune of others'
-  })
-  .set("end", {
-    "tagname": 'end',
-    "desc": 'Something really obnoxious to end conversations with'
-  })
-  .set("punch", {
-    "tagname": 'punch',
-    "desc": 'Use one of these to if you can\'t think of a punchline'
-  })
+// constants for the tags to reduce bugs from typos and inconsistencies
+const WHAT = "what";
+const MUSICAL = "musical";
+const SHUTUP = "shutup";
+const NONSENSE = "nonsense";
+const FIGHTME = "fightme";
+const LOL = "lol";
+const END = "end";
+const PUNCH = "punch";
+
+// map tagname keys to a description
+exports.tagsToDesc = new Map()
+  .set(WHAT, 'Expressions of your confusion')
+  .set(MUSICAL, 'Music filled soundbites')
+  .set(SHUTUP, 'Express your desire to make someone stop talking')
+  .set(NONSENSE, 'Stuff that makes no sense')
+  .set(FIGHTME, 'Fight me')
+  .set(LOL, 'Laugh at the misfortune of others')
+  .set(END, 'Something really obnoxious to end conversations with')
+  .set(PUNCH, 'Use one of these if you can\'t think of a punchline');
 
 
-// contains file name in sound and tags
-exports.sfxsupp = [
-  {
+/**
+ * Key: human-readable name for use with exact sound requests
+ * 
+ * Values:
+ *  name: exact filename to read
+ *  desc: human-readable description
+ *  tags: tags associated with file
+ */
+exports.sfxsupp = new Map()
+  .set('wgat', {
     "name": 'wgat.ogg',
-    "tags": [
-      exports.tags.get("what").tagname,
-      exports.tags.get("short").tagname
-    ]
-  },
-  {
+    "desc": 'wgat',
+    "tags": [WHAT]
+  })
+  .set('jumpbus', {
     "name": 'jumpedoverbusses.ogg',
-    "tags": [
-      exports.tags.get("nonsense").tagname,
-    ]
-  },
-  {
+    "desc": 'You jumped over summa mah busses',
+    "tags": [NONSENSE]
+  })
+  .set('laughatdanger', {
     "name": 'laughatdanger.ogg',
-    "tags": [
-      exports.tags.get("lol").tagname,
-      exports.tags.get("fightme").tagname
-    ]
-  },
-  {
+    "desc": 'laugh in the face of danger',
+    "tags": [LOL, FIGHTME]
+  })
+  .set('whothehell', {
     "name": 'whothehell.ogg',
-    "tags": [
-      exports.tags.get("fightme").tagname,
-    ]
-  },
-  {
+    "desc": 'MIGHTY KAMINA',
+    "tags": [FIGHTME]
+  })
+  .set('longswords', {
     "name": 'longsword.ogg',
-    "tags": [
-      exports.tags.get("nonsense").tagname,
-      exports.tags.get("long").tagname
-    ]
-  },
-  {
+    "desc": 'So many longswords',
+    "tags": [NONSENSE]
+  })
+  .set('todd', {
     "name": 'todd.ogg',
-    "tags": [
-      exports.tags.get("fightme").tagname,
-      exports.tags.get("long").tagname
-    ]
-  },
-  {
+    "desc": 'Do not mess with todd',
+    "tags": [FIGHTME, SHUTUP]
+  })
+  .set('paperdollman', {
     "name": 'paperdollman.ogg',
-    "tags": [
-      exports.tags.get("end").tagname,
-      exports.tags.get("long").tagname
-    ]
-  },
-  {
+    "desc": 'The infamous paper doll man',
+    "tags": [END, MUSICAL]
+  })
+  .set('ezmodo', {
     "name": 'ezmodo.ogg',
-    "tags": [
-      exports.tags.get("lol").tagname,
-      exports.tags.get("nonsense").tagname,
-      exports.tags.get("long").tagname
-    ]
-  },
-  {
+    "desc": 'Not even elementary schoolers play on easy mode',
+    "tags": [NONSENSE, MUSICAL]
+  })
+  .set('walmart', {
     "name": 'unwanted.ogg',
-    "tags": [
-      exports.tags.get("end").tagname,
-      exports.tags.get("long").tagname
-    ]
-  },
-  {
+    "desc": 'Do all your shopping at walmart',
+    "tags": [END, MUSICAL, NONSENSE]
+  })
+  .set('malefantasy', {
     "name": 'themalefantasy.ogg',
-    "tags": [
-      exports.tags.get("punch").tagname,
-      exports.tags.get("long").tagname
-    ]
-  }
-]
+    "desc": 'It appeals to the male fantasy',
+    "tags": [PUNCH]
+  });
