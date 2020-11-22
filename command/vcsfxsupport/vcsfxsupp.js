@@ -7,6 +7,7 @@ const FIGHTME = "fightme";
 const LOL = "lol";
 const END = "end";
 const PUNCH = "punch";
+const FU = "fu"
 
 // map tagname keys to a description
 exports.tagsToDesc = new Map()
@@ -17,7 +18,8 @@ exports.tagsToDesc = new Map()
   .set(FIGHTME, 'Fight me')
   .set(LOL, 'Laugh at the misfortune of others')
   .set(END, 'Something really obnoxious to end conversations with')
-  .set(PUNCH, 'Use one of these if you can\'t think of a punchline');
+  .set(PUNCH, 'Use one of these if you can\'t think of a punchline')
+  .set(FU, 'Be rude');
 
 
 /**
@@ -57,7 +59,7 @@ exports.sfxsupp = new Map()
   .set('todd', {
     "name": 'todd.ogg',
     "desc": 'Do not mess with todd',
-    "tags": [FIGHTME, SHUTUP]
+    "tags": [FIGHTME]
   })
   .set('paperdollman', {
     "name": 'paperdollman.ogg',
@@ -67,12 +69,37 @@ exports.sfxsupp = new Map()
   .set('ezmodo', {
     "name": 'ezmodo.ogg',
     "desc": 'Not even elementary schoolers play on easy mode',
-    "tags": [NONSENSE, MUSICAL]
+    "tags": [NONSENSE]
   })
   .set('walmart', {
     "name": 'unwanted.ogg',
     "desc": 'Do all your shopping at walmart',
     "tags": [END, MUSICAL, NONSENSE]
+  })
+  .set('notmydad', {
+    "name": 'funotdad.ogg',
+    "desc": 'Not my dad',
+    "tags": [FU]
+  })
+  .set('fuhonorplz', {
+    "name": 'honorplz.ogg',
+    "desc": 'honorplz',
+    "tags": [FU]
+  })
+  .set('uno', {
+    "name": 'uno.ogg',
+    "desc": 'You didn\'t even need to break one of my candles to get it',
+    "tags": [NONSENSE, PUNCH]
+  })
+  .set('loseropinion', {
+    "name": 'loseropinion.ogg',
+    "desc": 'Loser',
+    "tags": [SHUTUP]
+  })
+  .set('soldierofdance', {
+    "name": 'tfdance.ogg',
+    "desc": 'Party in red spawn',
+    "tags": [MUSICAL]
   })
   .set('malefantasy', {
     "name": 'themalefantasy.ogg',
