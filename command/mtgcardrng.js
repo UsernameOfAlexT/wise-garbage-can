@@ -1,6 +1,8 @@
 const mtg = require('mtgsdk');
 const MAX_CARD_PAGESIZE = 10;
 const DEFAULT_CARD_PAGESIZE = 1;
+// try to exclude very exotic layouts as they display poorly
+const RELEVANT_LAYOUTS = "normal|split|flip|double-faced|aftermath";
 /** 
  * Using magicthegathering.io's api endpoints.
  * Ratelimited to 5000/hr but we really shouldn't be coming anywhere remotely close
@@ -23,12 +25,17 @@ module.exports = {
     premsgToBuild.push('I have heard your request. Allow me some time to consult the elders');
     let pageSizeParsed = parseNumberArg(args, premsgToBuild);
 
-    msg.channel.send(premsgToBuild, { split : true});
+    msg.channel.send(premsgToBuild, { split: true });
     /** 
      * note: I would like to use contains to filter out image-less results but it
      *  doesn't seem to behave when used with random
     */
-    mtg.card.where({ page: 1, pageSize: pageSizeParsed, random: true })
+    mtg.card.where({
+      page: 1,
+      pageSize: pageSizeParsed,
+      random: true,
+      layout: RELEVANT_LAYOUTS,
+    })
       .then(cards => {
         if (!cards.length) {
           console.error('No cards were returned by the query');
@@ -40,12 +47,12 @@ module.exports = {
         for (const card of cards) {
           addCardInfo(resmsgToBuild, card);
         }
-        
-        msg.channel.send(resmsgToBuild, { split : true})
-        .catch(err => {
-          msg.channel.send('We had trouble figuring the card(s) out. Try again later');
-          console.error('Display issues. \n', err);
-        });
+
+        msg.channel.send(resmsgToBuild, { split: true })
+          .catch(err => {
+            msg.channel.send('We had trouble figuring the card(s) out. Try again later');
+            console.error('Display issues. \n', err);
+          });
       })
       .catch(err => {
         msg.channel.send('Seems like something went wrong while getting cards. Try again later');
