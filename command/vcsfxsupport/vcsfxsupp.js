@@ -105,4 +105,29 @@ exports.sfxsupp = new Map()
     "name": 'themalefantasy.ogg',
     "desc": 'It appeals to the male fantasy',
     "tags": [PUNCH]
+  })
+  .set('fujiapples', {
+    "name": 'fujiapples.ogg',
+    "desc": 'Drunk Baking',
+    "tags": [NONSENSE, PUNCH]
+  })
+  .set('stamos', {
+    "name": 'stamos.ogg',
+    "desc": 'STAMOS',
+    "tags": [NONSENSE]
+  })
+  .set('madeyathink', {
+    "name": 'think.ogg',
+    "desc": 'Made ya think!',
+    "tags": [PUNCH]
+  })
+  .set('v', {
+    "name": 'vuser.ogg',
+    "desc": 'Just talk about video games. There\'s only one rule',
+    "tags": [SHUTUP]
+  })
+  .set('bonusducks', {
+    "name": 'bonusducks.ogg',
+    "desc": 'MERASMUS YOU ARE THE WORST ROOMATE',
+    "tags": [NONSENSE]
   });

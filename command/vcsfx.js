@@ -16,13 +16,13 @@ const DETAILED_LOGGING = !envutils.isProdEnv();
 
 module.exports = {
   name: 'vcsfx',
-  aliases: ['vsfx', 'vcfx'],
+  aliases: ['vsfx', 'vcfx', 'vx'],
   cd: 11,
   desc: 'Play some random sounds in the voice channel you are in. Very annoying! '
     + 'Use \'vcsfx tags\' to see tag options to filter. '
     + 'Use \'vcsfx names\' to see names to use if getting an exact sound '
     + '\nUse \' ' + EXACT_SOUND_PREFIX + ' \' to indicate an exact sound is desired '
-    + 'for example:  \'vcsfx ' + EXACT_SOUND_PREFIX + 'jumpbus\'' 
+    + 'for example:  \'vcsfx ' + EXACT_SOUND_PREFIX + 'jumpbus\''
     + '\n(Applies to first argument only, all others ignored if this is given)',
   disallowDm: true,
   needSendPerm: true,
@@ -43,6 +43,12 @@ module.exports = {
       );
     }
 
+    // delete the original request message to keep chats clean
+    msg.delete()
+      .catch(err => {
+        console.error(`${err} thrown while trying to delete vcsfx request`)
+      });
+
     // decide what ought to be played
     const fileToPlay = !args.length ? randomSfx() : specificSfx(args);
 
@@ -54,7 +60,7 @@ module.exports = {
     fs.access(fileToPlay, err => {
       if (err) {
         msg.reply('Something seems wrong with the sound file. Try again later');
-        console.log(`${err} thrown trying to access sound file`);
+        console.error(`${err} thrown trying to access sound file`);
         return;
       }
     });
@@ -70,7 +76,7 @@ module.exports = {
         });
         dispatch.on('error', () => {
           msg.reply('We had some trouble playing that one. Try again later.');
-          console.log(`Error while playing ${fileToPlay}`);
+          console.error(`Error while playing ${fileToPlay}`);
           connection.disconnect();
         });
         dispatch.on('finish', () => {
@@ -82,7 +88,7 @@ module.exports = {
       })
       .catch(err => {
         msg.reply('Something went wrong while joining voice. Try again later');
-        console.log(`Error joining voice: ${err}`);
+        console.error(`Error joining voice: ${err}`);
       });
 
   }
@@ -141,7 +147,7 @@ function randomSfxFromList(sfxList) {
 
 function buildPathToSound(sfxsuppobj) {
   if (!sfxsuppobj.name) {
-    console.log('Tried to build path to audio file but no name provided!');
+    console.error('Tried to build path to audio file but no name provided!');
     return;
   }
   return REL_PATH_TO_SOUND_DIR + sfxsuppobj.name;
