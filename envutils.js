@@ -1,11 +1,9 @@
-const PRODUCTION_ALIASES = ['prod', 'production'];
-const TEST_ALIASES = ['test'];
-const current_env = process.env.ENV;
+/**
+ * A single point of truth for deciding 
+ * env related variables
+ */
 
-exports.isProdEnv = function () {
-  return PRODUCTION_ALIASES.includes(current_env.toLowerCase());
+exports.useDetailedLogging = function() {
+  return process.env.DETAILED_LOGS || false;
 }
 
-exports.isTestEnv = function () {
-  return TEST_ALIASES.includes(current_env.toLowerCase());
-}

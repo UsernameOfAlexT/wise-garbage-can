@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const Discord = require('discord.js');
+const envutils = require('./envutils.js');
 const bot_token = process.env.BOT_TOKEN;
 const prefix = process.env.CMD_PREFIX;
 
@@ -26,6 +27,7 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', () => {
+  console.log(`Detailed Logging: ${envutils.useDetailedLogging() ? "on" : "off"}`);
   console.log('I am ready to fight robots');
 });
 

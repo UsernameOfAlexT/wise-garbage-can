@@ -5,8 +5,6 @@ const fs = require('fs');
 // NOTE: this seems to need to be relative to index, and not this module
 const REL_PATH_TO_SOUND_DIR = 'sound/';
 const EXACT_SOUND_PREFIX = '*';
-// disable excessive logging in prod
-const DETAILED_LOGGING = !envutils.isProdEnv();
 
 /**
  * Static Audio files stored locally for now.
@@ -70,7 +68,7 @@ module.exports = {
         // NOTE: if the file[path] is invalid then this just finishes immediately
         const dispatch = connection.play(fileToPlay, { volume: 0.8 });
         dispatch.on('start', () => {
-          if (DETAILED_LOGGING) {
+          if (envutils.useDetailedLogging()) {
             console.log(`I should be playing ${fileToPlay} now`);
           }
         });
@@ -80,7 +78,7 @@ module.exports = {
           connection.disconnect();
         });
         dispatch.on('finish', () => {
-          if (DETAILED_LOGGING) {
+          if (envutils.useDetailedLogging()) {
             console.log(`I should be done playing ${fileToPlay} now`);
           }
           connection.disconnect();
