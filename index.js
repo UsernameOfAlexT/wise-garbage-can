@@ -51,12 +51,13 @@ client.on('message', message => {
   }
 
   // DM checking
-  if (command.disallowDm && message.channel.type === 'dm') {
+  const invokedFromDm = message.channel.type === 'dm';
+  if (command.disallowDm && invokedFromDm) {
     return message.reply(`${commandName}, you can\'t use that here`);
   }
 
   // permissions checking for sending messages (a basic requirement)
-  if (command.needSendPerm && !(message.channel.type === 'dm')
+  if (command.needSendPerm && !invokedFromDm
     && !(message.channel.permissionsFor(client.user).has('SEND_MESSAGES'))) {
     const msgToBuild = [];
     msgToBuild.push(`I was going to execute ${commandName}`);
@@ -104,6 +105,20 @@ client.on('message', message => {
   }
   timestamps.set(message.author.id, now);
   setTimeout(() => timestamps.delete(message.author.id), cdTime);
+
+  // delete the original invoke msg from non-dms if required
+  if (!invokedFromDm && command.cleanupRequest) {
+    const hasDeleteMsgPerm = message.channel.permissionsFor(client.user).has('MANAGE_MESSAGES');
+    if (envutils.useDetailedLogging()) {
+      console.log(`${hasDeleteMsgPerm ? "Has" : "Lacks"} delete permissions for this channel`);
+    }
+    if (hasDeleteMsgPerm) {
+      message.delete()
+        .catch(err => {
+          console.error(`${err} thrown while trying to delete ${commandName} request`)
+        });
+    }
+  }
 
   try {
     command.execute(message, args);

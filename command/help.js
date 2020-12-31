@@ -7,6 +7,7 @@ module.exports = {
   desc: 'You already are using this thing. Quit asking',
   disallowDm: false,
   needSendPerm: true,
+  cleanupRequest: true,
   usage: '[command name]',
   execute(msg, args) {
     const msgToBuild = [];

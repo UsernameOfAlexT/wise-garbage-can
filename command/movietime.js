@@ -5,6 +5,7 @@ module.exports = {
   desc: 'Open/close this channel for movie time',
   disallowDm: true,
   ownerOnly: true,
+  cleanupRequest: true,
   usage: '[on/off]',
   execute(msg, args) {
     let targetState;

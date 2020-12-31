@@ -24,6 +24,7 @@ module.exports = {
     + '\n(Applies to first argument only, all others ignored if this is given)',
   disallowDm: true,
   needSendPerm: true,
+  cleanupRequest: true,
   usage: '{optional tags}',
   execute(msg, args) {
     // handle various informational commands
@@ -40,12 +41,6 @@ module.exports = {
         'Join a real one and we\'ll talk.'
       );
     }
-
-    // delete the original request message to keep chats clean
-    msg.delete()
-      .catch(err => {
-        console.error(`${err} thrown while trying to delete vcsfx request`)
-      });
 
     // decide what ought to be played
     const fileToPlay = !args.length ? randomSfx() : specificSfx(args);
