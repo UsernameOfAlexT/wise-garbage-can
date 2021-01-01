@@ -27,7 +27,7 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', () => {
-  console.log(`Detailed Logging: ${envutils.useDetailedLogging() ? "on" : "off"}`);
+  console.log(`Logging Level: ${envutils.useDetailedLogging() ? "debug" : "standard"}`);
   console.log('I am ready to fight robots');
 });
 
