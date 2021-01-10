@@ -7,7 +7,11 @@ const FIGHTME = "fightme";
 const LOL = "lol";
 const END = "end";
 const PUNCH = "punch";
-const FU = "fu"
+const FU = "fu";
+const YES = "yes";
+const NO = "no";
+const READY = "ready";
+const HURRY = "hurry";
 
 // map tagname keys to a description
 exports.tagsToDesc = new Map()
@@ -19,7 +23,11 @@ exports.tagsToDesc = new Map()
   .set(LOL, 'Laugh at the misfortune of others')
   .set(END, 'Something really obnoxious to end conversations with')
   .set(PUNCH, 'Use one of these if you can\'t think of a punchline')
-  .set(FU, 'Be rude');
+  .set(FU, 'Be rude')
+  .set(YES, 'Confirm stuff!')
+  .set(NO, 'Deny stuff!')
+  .set(READY, 'Are you back from the washroom yet?')
+  .set(HURRY, 'How long can it take to go to the washroom?');
 
 
 /**
@@ -130,4 +138,49 @@ exports.sfxsupp = new Map()
     "name": 'bonusducks.ogg',
     "desc": 'MERASMUS YOU ARE THE WORST ROOMATE',
     "tags": [NONSENSE]
-  });
+  })
+  .set('aoestart', {
+    "name": 'aoestartg.ogg',
+    "desc": 'Spam it',
+    "tags": [HURRY]
+  })
+  .set('evil', {
+    "name": 'evilpresence.ogg',
+    "desc": 'It is evil to make people wait apparently',
+    "tags": [HURRY, SHUTUP]
+  })
+  .set('fightrobots', {
+    "name": 'fightrobots.ogg',
+    "desc": 'METAL MEN WILL DIE',
+    "tags": [READY]
+  })
+  .set('ohyeah', {
+    "name": 'krabs.ogg',
+    "desc": 'You know what this is',
+    "tags": [YES]
+  })
+  .set('readyfriend', {
+    "name": 'medready.ogg',
+    "desc": 'Listen to the evil one every once in a while',
+    "tags": [READY]
+  })
+  .set('pedroone', {
+    "name": 'pedroone.ogg',
+    "desc": 'Noooo',
+    "tags": [NO]
+  })
+  .set('pedrotwo', {
+    "name": 'pedrotwo.ogg',
+    "desc": 'NOOOOO',
+    "tags": [NO]
+  })
+  .set('pedrothree', {
+    "name": 'pedrothree.ogg',
+    "desc": 'NoOOOooo',
+    "tags": [NO]
+  })
+  .set('reggie', {
+    "name": 'reggie.ogg',
+    "desc": 'For team kneepads',
+    "tags": [READY]
+  })
