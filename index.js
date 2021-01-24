@@ -2,6 +2,9 @@
 const fs = require('fs');
 const Discord = require('discord.js');
 const envutils = require('./envutils.js');
+const utils = require('./utils.js');
+const phraserobj = require('./datalists/statusphraseobjs.js');
+const phraser = require('./datalists/statusphraser.js');
 const bot_token = process.env.BOT_TOKEN;
 const prefix = process.env.CMD_PREFIX;
 
@@ -29,6 +32,11 @@ for (const file of commandFiles) {
 client.once('ready', () => {
   console.log(`Logging Level: ${envutils.useDetailedLogging() ? "debug" : "standard"}`);
   console.log('I am ready to fight robots');
+
+  // roll a random status upon each startup. For fun.
+  const randactivity = phraserobj.chain(phraser.standard_list, 4);
+  client.user.setActivity(randactivity, { type: utils.pickRandomly(phraser.relevant_start_statuses) })
+    .catch(err => console.error(err));
 });
 
 client.on('message', message => {
