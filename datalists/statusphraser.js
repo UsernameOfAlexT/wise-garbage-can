@@ -1,4 +1,4 @@
-const { Subject, Connector, Descphrase, Wild, Terminator } = require('./statusphraseobjs.js');
+const { Subject, Connector, Descphrase, Terminator } = require('./statusphraseobjs.js');
 
 exports.standard_list = [
   new Subject("Triangle"),
