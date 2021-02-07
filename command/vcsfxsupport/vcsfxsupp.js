@@ -12,6 +12,7 @@ const YES = "yes";
 const NO = "no";
 const READY = "ready";
 const HURRY = "hurry";
+const CURSED = "cursed";
 
 // map tagname keys to a description
 exports.tagsToDesc = new Map()
@@ -27,7 +28,8 @@ exports.tagsToDesc = new Map()
   .set(YES, 'Confirm stuff!')
   .set(NO, 'Deny stuff!')
   .set(READY, 'Are you back from the washroom yet?')
-  .set(HURRY, 'How long can it take to go to the washroom?');
+  .set(HURRY, 'How long can it take to go to the washroom?')
+  .set(CURSED, 'Cursed sounds that stick in your brain');
 
 
 /**
@@ -183,4 +185,24 @@ exports.sfxsupp = new Map()
     "name": 'reggie.ogg',
     "desc": 'For team kneepads',
     "tags": [READY]
+  })
+  .set('california', {
+    "name": 'california.ogg',
+    "desc": 'The greatest around',
+    "tags": [CURSED, MUSICAL]
+  })
+  .set('konga', {
+    "name": 'konga.ogg',
+    "desc": '8',
+    "tags": [CURSED, MUSICAL]
+  })
+  .set('snakeone', {
+    "name": 'snakesone.ogg',
+    "desc": 'Tunnel Snakes rule',
+    "tags": [FU]
+  })
+  .set('snaketwo', {
+    "name": 'snakestwo.ogg',
+    "desc": 'We\'re the Tunnel Snakes',
+    "tags": [CURSED]
   })
