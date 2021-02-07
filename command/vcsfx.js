@@ -22,7 +22,7 @@ module.exports = {
     + '\nUse \' ' + EXACT_SOUND_PREFIX + ' \' to indicate an exact sound is desired '
     + 'for example:  \'vcsfx ' + EXACT_SOUND_PREFIX + 'jumpbus\''
     + '\n(Applies to first argument only, all others ignored if this is given)',
-  disallowDm: true,
+  disallowDm: false,
   needSendPerm: true,
   cleanupRequest: true,
   usage: '{optional tags}',
@@ -31,6 +31,14 @@ module.exports = {
     const infomsg = handleInfoCommands(args);
     if (infomsg.length) {
       return msg.author.send(infomsg, { split: true });
+    }
+
+    // perform various checks to make sure what we are about to try is valid
+    if (!msg.channel.guild) {
+      return msg.author.send(
+        `Only informational commands can be used outside of servers.` +
+        `\n Use the help command for more on this.`
+      );
     }
 
     if (!msg.channel.guild.available) { return; }
@@ -46,7 +54,11 @@ module.exports = {
     const fileToPlay = !args.length ? randomSfx() : specificSfx(args);
 
     if (!fileToPlay) {
-      return msg.reply('No matches. Use \'vcsfx tags\' or \'vcsfx names\'');
+      return msg.reply(
+        `No matches. Use \'vcsfx tags\' or \'vcsfx names\'` +
+        `\nReminder: Prefix with ${EXACT_SOUND_PREFIX}` +
+        ` for exact sound names`
+      );
     }
     // use fs to check validity. connection.play will handle invalid inputs fine
     // but some feedback is good for debug/ux/whatever
