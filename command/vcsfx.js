@@ -4,7 +4,7 @@ const envutils = require('../envutils.js');
 const fs = require('fs');
 // NOTE: this seems to need to be relative to index, and not this module
 const REL_PATH_TO_SOUND_DIR = 'sound/';
-const EXACT_SOUND_PREFIX = '*';
+const TAG_SOUND_PREFIX = '-t';
 
 /**
  * Static Audio files stored locally for now.
@@ -19,9 +19,9 @@ module.exports = {
   desc: 'Play some random sounds in the voice channel you are in. Very annoying! '
     + 'Use \'vcsfx tags\' to see tag options to filter. '
     + 'Use \'vcsfx names\' to see names to use if getting an exact sound '
-    + '\nUse \' ' + EXACT_SOUND_PREFIX + ' \' to indicate an exact sound is desired '
-    + 'for example:  \'vcsfx ' + EXACT_SOUND_PREFIX + 'jumpbus\''
-    + '\n(Applies to first argument only, all others ignored if this is given)',
+    + '\nInclude \' ' + TAG_SOUND_PREFIX + ' \' to search by tags '
+    + 'for example:  \'vcsfx ' + TAG_SOUND_PREFIX + ' ready\''
+    + '\n(If getting exact sounds, only the first name given is considered)',
   disallowDm: false,
   needSendPerm: true,
   cleanupRequest: true,
@@ -56,8 +56,8 @@ module.exports = {
     if (!fileToPlay) {
       return msg.reply(
         `No matches. Use \'vcsfx tags\' or \'vcsfx names\'` +
-        `\nReminder: Prefix with ${EXACT_SOUND_PREFIX}` +
-        ` for exact sound names`
+        `\nReminder: Include ${TAG_SOUND_PREFIX}` +
+        ` for searching by tag`
       );
     }
     // use fs to check validity. connection.play will handle invalid inputs fine
@@ -126,9 +126,12 @@ function randomSfx() {
 
 function specificSfx(args) {
   // there should be at least one arg in this case
-  return args[0].startsWith(EXACT_SOUND_PREFIX)
-    ? sfxBasedOnExactName(args[0].slice(EXACT_SOUND_PREFIX.length))
-    : sfxBasedOnTag(args);
+  return args.includes(TAG_SOUND_PREFIX)
+    ? sfxBasedOnTag(args.filter(tag => {
+      return vcsfxsupp.tagsToDesc.has(tag);
+    }))
+    : sfxBasedOnExactName(args[0])
+    ;
 }
 
 function sfxBasedOnExactName(name) {
