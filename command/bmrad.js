@@ -8,10 +8,16 @@ const REL_PATH_TO_SUBMODULES = './bmrad';
 const bmradsub = new Discord.Collection();
 mapCommands(bmradsub);
 
+const connectionCore = {
+  getConnection: getExistingConnection,
+  setConnection: setExistingConnection,
+  resetConnection: resetExistingConnection
+}
+
 module.exports = {
   name: 'bmrad',
   aliases: ['bmradio'],
-  cd: 11,
+  cd: 4,
   desc: 'Mysterious noises: radio style',
   disallowDm: false,
   needSendPerm: true,
@@ -61,7 +67,7 @@ module.exports = {
     // TODO cd checker for just the submodules?
 
     try {
-      subcmd.execute(msg, args);
+      subcmd.execute(msg, args, connectionCore);
     } catch (err) {
       console.error(err);
       msg.reply(`Something went wrong within ${subcommandname}`);
@@ -77,4 +83,28 @@ function mapCommands(command_collection) {
     const command = require(`${REL_PATH_TO_SUBMODULES}/${file}`);
     command_collection.set(command.name, command);
   }
+}
+
+function getExistingConnection(client) {
+  // used by the submodules as a common way to share and interact
+  if (!client instanceof Discord.Client) {
+    console.error(`Was not passed a discord client! Unexpected behaviour may follow`);
+    return undefined;
+  }
+  // undefined if not already set by something
+  return client.bmradConnection;
+}
+function setExistingConnection(client, connection) {
+  if (!client instanceof Discord.Client) {
+    console.error('Attempted to set connection on a non-client!');
+    return;
+  }
+  client.bmradConnection = connection;
+}
+function resetExistingConnection(client) {
+  if (!client instanceof Discord.Client) {
+    console.error('Attempted to reset connection on a non-client!');
+    return;
+  }
+  client.bmradConnection = undefined;
 }
