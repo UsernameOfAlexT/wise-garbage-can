@@ -85,6 +85,7 @@ function mapCommands(command_collection) {
   }
 }
 
+// TODO these sets of function should be reworked to use broadcasts
 function getExistingConnection(client) {
   // used by the submodules as a common way to share and interact
   if (!client instanceof Discord.Client) {
