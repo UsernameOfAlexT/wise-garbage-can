@@ -1,5 +1,8 @@
 const fs = require('fs');
 const Discord = require('discord.js');
+const ytdl = require('ytdl-core-discord');
+const envutils = require('../envutils.js');
+const utils = require('../utils.js');
 // this one is relative to the top level caller
 const PATH_TO_SUBMODULES = './command/bmrad';
 // this one is for use within the module so it should be relative to this file
@@ -9,10 +12,22 @@ const bmradsub = new Discord.Collection();
 mapCommands(bmradsub);
 
 const connectionCore = {
-  getConnection: getExistingConnection,
-  setConnection: setExistingConnection,
-  resetConnection: resetExistingConnection
+  getBroadcast: getBmradBroadcast
 }
+// TODO eventually should be defined inside its own subdirectory
+const REL_PATH_INTERMISSION_SND_DIR = 'sound/';
+
+// Define possible 'intermissions' for the radio
+const INTERMISSIONS = [
+  'todd.ogg', 'think.ogg'
+];
+// base chance to trigger intermissions per play loop
+const BASE_INTER_CHANCE = 20;
+
+// TODO temporary play list to use until we can read from db
+const MOCK_PLAYLIST = [
+  'https://www.youtube.com/watch?v=3MHzNfoulwI'
+];
 
 module.exports = {
   name: 'bmrad',
@@ -85,27 +100,132 @@ function mapCommands(command_collection) {
   }
 }
 
-// TODO these sets of function should be reworked to use broadcasts
-function getExistingConnection(client) {
+/**
+ * Get the common Bmrad broadcast if it exists.
+ * Optionally init it if it does not
+ * 
+ * @param {Discord.Client} client client used to check broadcast
+ * @param {boolean} shouldInit whether to init the broadcast if not existing
+ * @returns broadcast or undefined
+ */
+function getBmradBroadcast(client, shouldInit = true) {
   // used by the submodules as a common way to share and interact
   if (!client instanceof Discord.Client) {
     console.error(`Was not passed a discord client! Unexpected behaviour may follow`);
     return undefined;
   }
-  // undefined if not already set by something
-  return client.bmradConnection;
-}
-function setExistingConnection(client, connection) {
-  if (!client instanceof Discord.Client) {
-    console.error('Attempted to set connection on a non-client!');
-    return;
+
+  // if not yet created, initialize the broadcast
+  if (!client.bmradbroadcast && shouldInit) {
+    // create the broadcast, kick off the play loop and set listeners
+    client.bmradbroadcast = client.voice.createBroadcast();
+
+    // TODO this is not playing nice when multiple starts are called
+    // or when start is called from a guild that already has a subscription
+    client.bmradbroadcast.on('subscribe', dispatch => {
+      envutils.logDetail(`New bmrad subscriber`);
+    });
+
+    client.bmradbroadcast.on('unsubscribe', dispatch => {
+      envutils.logDetail(`Unsubscribe event in bmrad`);
+      // end the broadcast if there are no more subscribers
+      const bmradsubscription = client.bmradbroadcast.subscribers;
+      if (!bmradsubscription || !bmradsubscription.length) {
+        envutils.logDetail(`The bmrad broadcast has ended`);
+        // the dispatcher needs to be destroyed first
+        if (client.bmradbroadcast.dispatcher) {
+          client.bmradbroadcast.dispatcher.destroy();
+        }
+        // completely end the broadcast
+        client.bmradbroadcast.end();
+        client.bmradbroadcast = undefined;
+
+        if (envutils.useDetailedLogging()) {
+          const broadcastno = client.voice.broadcasts ? client.voice.broadcasts.length : 0;
+          console.log(`bmradbroadcast was destroyed. There are ${broadcastno} broadcasts`);
+        }
+      }
+    });
+
+    let track = utils.pickRandomly(MOCK_PLAYLIST);
+    let initialTrack = new AudioInfo(
+      track,
+      true
+    );
+    playbroadcast(client.bmradbroadcast, initialTrack);
+    if (envutils.useDetailedLogging()) {
+      const broadcastno = client.voice.broadcasts ? client.voice.broadcasts.length : 0;
+      console.log(`bmradbroadcast was initialized. There are ${broadcastno} broadcasts`);
+    }
   }
-  client.bmradConnection = connection;
+  return client.bmradbroadcast;
 }
-function resetExistingConnection(client) {
-  if (!client instanceof Discord.Client) {
-    console.error('Attempted to reset connection on a non-client!');
-    return;
-  }
-  client.bmradConnection = undefined;
+
+/**
+ * simple object to hold information for play()
+ * 
+ * @param {String} name name for what is being played.
+ *          can be either a filepath or a full youtube url
+ * @param {boolean} isYtUrl whether to treat name as a url when trying to play
+ */
+function AudioInfo(name, isYtUrl) {
+  this.name = name;
+  this.isYtUrl = isYtUrl;
+}
+
+/**
+ * Begin the play loop for a broadcast
+ * 
+ * @param {Discord.BroadcastDispatcher} broadcast broadcast to play on
+ * @param {AudioInfo} audioinfoobj object containing info on what to play
+ * @param {Number} interchance chance to play an intermission afterward
+ */
+async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_CHANCE) {
+  envutils.logDetail(`Intermission chance is at ${interchance}`);
+
+  const dispatch = audioinfoobj.isYtUrl
+    ? broadcast.play(
+      await ytdl(audioinfoobj.name, { filter: 'audioonly' }),
+      {
+        type: 'opus',
+        volume: 0.35
+      }
+    )
+    : broadcast.play(
+      audioinfoobj.name,
+      {
+        volume: 0.8
+      }
+    )
+    ;
+
+  dispatch.on('start', () => {
+    envutils.logDetail(`Radio playing ${audioinfoobj.name}`);
+  });
+  dispatch.on('error', (err) => {
+    console.error(`Error while playing ${audioinfoobj.name}: ${err}`);
+    broadcast.end();
+  });
+  dispatch.on('finish', () => {
+    envutils.logDetail(`Changing off of ${audioinfoobj.name} now`);
+
+    // with a certain chance, play an 'intermission' afterward instead
+    if (utils.withChance(interchance)) {
+      // construct the sound path based on the names
+      let intermission = utils.pickRandomly(INTERMISSIONS);
+      let sndplay = new AudioInfo(
+        REL_PATH_INTERMISSION_SND_DIR + intermission,
+        false
+      );
+      playbroadcast(broadcast, sndplay);
+    } else {
+      // TODO for now just takes from a static list but should be randomizing from DB
+      let track = utils.pickRandomly(MOCK_PLAYLIST);
+      let ytplay = new AudioInfo(
+        track,
+        true
+      );
+      playbroadcast(broadcast, ytplay, interchance + 20);
+    }
+  });
 }
