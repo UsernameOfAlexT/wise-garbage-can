@@ -3,7 +3,7 @@ const utils = require('../utils.js');
 const envutils = require('../envutils.js');
 const fs = require('fs');
 // NOTE: this seems to need to be relative to index, and not this module
-const REL_PATH_TO_SOUND_DIR = 'sound/';
+const REL_PATH_TO_SOUND_DIR = 'sound/vcsfx/';
 const TAG_SOUND_PREFIX = '-t';
 
 /**

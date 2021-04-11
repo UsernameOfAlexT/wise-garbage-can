@@ -14,8 +14,8 @@ mapCommands(bmradsub);
 const connectionCore = {
   getBroadcast: getBmradBroadcast
 }
-// TODO eventually should be defined inside its own subdirectory
-const REL_PATH_INTERMISSION_SND_DIR = 'sound/';
+
+const REL_PATH_INTERMISSION_SND_DIR = 'sound/bmrad/';
 
 // Define possible 'intermissions' for the radio
 const INTERMISSIONS = [
