@@ -21,12 +21,16 @@ const REL_PATH_INTERMISSION_SND_DIR = 'sound/bmrad/';
 const INTERMISSIONS = [
   'todd.ogg', 'think.ogg'
 ];
+// A special fallback to play in the case of an error getting a YT video
+const FALLBACK_TRACK = 'broken.ogg';
 // base chance to trigger intermissions per play loop
 const BASE_INTER_CHANCE = 20;
 
 // TODO temporary play list to use until we can read from db
 const MOCK_PLAYLIST = [
-  'https://www.youtube.com/watch?v=3MHzNfoulwI'
+  'https://youtu.be/sSkgQM9d3kc',
+  'https://www.youtube.com/watch?v=3MHzNfoulwI',
+  'https://youtu.be/-UzSTJ8aiGg?t=50' // purposefully included to test error handling
 ];
 
 module.exports = {
@@ -120,8 +124,7 @@ function getBmradBroadcast(client, shouldInit = true) {
     // create the broadcast, kick off the play loop and set listeners
     client.bmradbroadcast = client.voice.createBroadcast();
 
-    // TODO this is not playing nice when multiple starts are called
-    // or when start is called from a guild that already has a subscription
+    // TODO possible source of errors if things happen too close together
     client.bmradbroadcast.on('subscribe', dispatch => {
       envutils.logDetail(`New bmrad subscriber`);
     });
@@ -162,15 +165,44 @@ function getBmradBroadcast(client, shouldInit = true) {
 }
 
 /**
- * simple object to hold information for play()
+ * Simple object to hold information for play()
  * 
  * @param {String} name name for what is being played.
  *          can be either a filepath or a full youtube url
  * @param {boolean} isYtUrl whether to treat name as a url when trying to play
+ * @param {Number} volume number that decides the volume of the file
  */
-function AudioInfo(name, isYtUrl) {
+function AudioInfo(name, isYtUrl, volume = 0.8) {
   this.name = name;
   this.isYtUrl = isYtUrl;
+  this.volume = volume;
+}
+
+/**
+ * Use the given broadcast to attempt to play something resolvable
+ * to audio. Returns the created dispatcher
+ * 
+ * @param {Discord.BroadcastDispatcher} broadcast broadcast to play on
+ * @param {*} playable anything that is playable using a broadcast
+ * @param {Number} volume  volume modifier for the sound
+ * @param {Boolean} isYtUrl whether to treat playable as a YouTube url
+ */
+function playSingle(broadcast, playable, volume, isYtUrl) {
+  return isYtUrl
+    ? broadcast.play(
+      playable,
+      {
+        type: 'opus',
+        volume: volume
+      }
+    )
+    : broadcast.play(
+      playable,
+      {
+        volume: volume
+      }
+    )
+    ;
 }
 
 /**
@@ -183,21 +215,30 @@ function AudioInfo(name, isYtUrl) {
 async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_CHANCE) {
   envutils.logDetail(`Intermission chance is at ${interchance}`);
 
-  const dispatch = audioinfoobj.isYtUrl
-    ? broadcast.play(
-      await ytdl(audioinfoobj.name, { filter: 'audioonly' }),
-      {
-        type: 'opus',
-        volume: 0.35
-      }
-    )
-    : broadcast.play(
-      audioinfoobj.name,
-      {
-        volume: 0.8
-      }
-    )
-    ;
+  let toPlay = audioinfoobj.name;
+  if (audioinfoobj.isYtUrl) {
+    try {
+      // if a youtube link is to be played, await and check it first
+      toPlay = await ytdl(audioinfoobj.name, { filter: 'audioonly' });
+    } catch {
+      // TODO somekind of end user feedback here would be nice
+      console.error(`YT video ${audioinfoobj.name} was not able to be retrieved`);
+      // adjust the audio info to suit the fallback
+      toPlay = REL_PATH_INTERMISSION_SND_DIR + FALLBACK_TRACK;
+      audioinfoobj = new AudioInfo(
+        toPlay,
+        false,
+        0.5
+      );
+    }
+  }
+
+  const dispatch = playSingle(
+    broadcast,
+    toPlay,
+    audioinfoobj.volume,
+    audioinfoobj.isYtUrl
+  );
 
   dispatch.on('start', () => {
     envutils.logDetail(`Radio playing ${audioinfoobj.name}`);
@@ -223,7 +264,8 @@ async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_C
       let track = utils.pickRandomly(MOCK_PLAYLIST);
       let ytplay = new AudioInfo(
         track,
-        true
+        true,
+        0.35
       );
       playbroadcast(broadcast, ytplay, interchance + 20);
     }
