@@ -12,14 +12,17 @@ const bmradsub = new Discord.Collection();
 mapCommands(bmradsub);
 
 const connectionCore = {
-  getBroadcast: getBmradBroadcast
+  getBroadcast: getBmradBroadcast,
+  addToSubscribed: addToWatchingChannels,
+  sendToSubscribed: sendToWatchingChannels
 }
 
 const REL_PATH_INTERMISSION_SND_DIR = 'sound/bmrad/';
 
 // Define possible 'intermissions' for the radio
 const INTERMISSIONS = [
-  'todd.ogg', 'think.ogg'
+  'egresscp.ogg', 'freemanlab.ogg', 'kleinerreport.ogg',
+  'zuluadmin.ogg', 'zuluinspect.ogg'
 ];
 // A special fallback to play in the case of an error getting a YT video
 const FALLBACK_TRACK = 'broken.ogg';
@@ -32,6 +35,14 @@ const MOCK_PLAYLIST = [
   'https://www.youtube.com/watch?v=3MHzNfoulwI',
   'https://youtu.be/-UzSTJ8aiGg?t=50' // purposefully included to test error handling
 ];
+
+// observing channels that should have info given to them
+// maps dispatches to text channels
+// text channel can possibly be undefined. This indicates a dispatch has opted
+// out of getting text updates
+const WATCHING_CHANNELS = new Map();
+
+const EMBEDCLR = '#7f3fbf';
 
 module.exports = {
   name: 'bmrad',
@@ -131,6 +142,8 @@ function getBmradBroadcast(client, shouldInit = true) {
 
     client.bmradbroadcast.on('unsubscribe', dispatch => {
       envutils.logDetail(`Unsubscribe event in bmrad`);
+      removeFromWatchingChannels(dispatch);
+
       // end the broadcast if there are no more subscribers
       const bmradsubscription = client.bmradbroadcast.subscribers;
       if (!bmradsubscription || !bmradsubscription.length) {
@@ -142,6 +155,7 @@ function getBmradBroadcast(client, shouldInit = true) {
         // completely end the broadcast
         client.bmradbroadcast.end();
         client.bmradbroadcast = undefined;
+        WATCHING_CHANNELS.clear();
 
         if (envutils.useDetailedLogging()) {
           const broadcastno = client.voice.broadcasts ? client.voice.broadcasts.length : 0;
@@ -162,6 +176,59 @@ function getBmradBroadcast(client, shouldInit = true) {
     }
   }
   return client.bmradbroadcast;
+}
+
+/**
+ * Add the given to the list of watched channels to recieve updates
+ * 
+ * @param {Discord.StreamDispatcher} dispatch dispatch to watch for during unsubscribe
+ * @param {Discord.TextChannel} channel subscribing channel
+ */
+function addToWatchingChannels(dispatch, channel) {
+  if (channel) {
+    channel.send(
+      new Discord.MessageEmbed()
+        .setColor(EMBEDCLR)
+        .setTitle("Access Granted")
+        .setDescription("This channel has been subscribed to the BMesa radio feed."
+          + "\n(It will get updates on what\'s playing)")
+    );
+  }
+  WATCHING_CHANNELS.set(dispatch, channel);
+}
+
+/**
+ * Unsubscribe the channel mapped from the given dispatch
+ * so it no longer gets radio updates
+ * 
+ * @param {Discord.StreamDispatcher} dispatch dispatch to remove matching channel of 
+ */
+function removeFromWatchingChannels(dispatch) {
+  const channelToRemove = WATCHING_CHANNELS.get(dispatch);
+  if (channelToRemove) {
+    channelToRemove.send(
+      new Discord.MessageEmbed()
+        .setColor(EMBEDCLR)
+        .setTitle("Have a very safe day.")
+        .setDescription("Disconnecting from the BMesa radio network...")
+    );
+  }
+  if (!WATCHING_CHANNELS.delete(dispatch)) {
+    console.error('Failed to find a matching channel for dispatch');
+  }
+}
+
+/**
+ * Send the given message to all watching channels
+ * 
+ * @param {String} msg text to send to all watching channels
+ */
+function sendToWatchingChannels(msg) {
+  WATCHING_CHANNELS.forEach((channel) => {
+    if (channel) {
+      channel.send(msg);
+    }
+  });
 }
 
 /**
@@ -220,8 +287,21 @@ async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_C
     try {
       // if a youtube link is to be played, await and check it first
       toPlay = await ytdl(audioinfoobj.name, { filter: 'audioonly' });
+      // TODO fetch more human readable names if possible
+      sendToWatchingChannels(
+        new Discord.MessageEmbed()
+          .setColor(EMBEDCLR)
+          .setTitle("Now Playing")
+          .setDescription(`${audioinfoobj.name}`)
+      );
     } catch {
-      // TODO somekind of end user feedback here would be nice
+      // Error feedback to subscribed channels
+      sendToWatchingChannels(
+        new Discord.MessageEmbed()
+          .setColor(EMBEDCLR)
+          .setTitle("Error Recovery")
+          .setDescription(`Tried: ${audioinfoobj.name} but it seems unavailable`)
+      );
       console.error(`YT video ${audioinfoobj.name} was not able to be retrieved`);
       // adjust the audio info to suit the fallback
       toPlay = REL_PATH_INTERMISSION_SND_DIR + FALLBACK_TRACK;

@@ -1,3 +1,5 @@
+const FLAG_SILENT = '-silent';
+
 module.exports = {
   name: 'start',
   aliases: ['on', 'begin'],
@@ -5,7 +7,7 @@ module.exports = {
   desc: 'Tune in and listen',
   disallowDm: true,
   vcRequired: true,
-  usage: '',
+  usage: `[${FLAG_SILENT} : when included, disables most info from being posted]`,
   execute(msg, args, connectionCore) {
     // do not join guilds where this is already active to
     // prevent some nasty behaviours
@@ -17,7 +19,12 @@ module.exports = {
       .then(connection => {
         // subscribe to the broadcast
         // this connection still needs to be dc'd elsewhere (in stop)
-        connection.play(connectionCore.getBroadcast(msg.client));
+        const dispatch = connection.play(connectionCore.getBroadcast(msg.client));
+        const subbedChannel = args.includes(FLAG_SILENT)
+          ? undefined
+          : msg.channel
+          ;
+        connectionCore.addToSubscribed(dispatch, subbedChannel);
       })
       .catch(err => {
         msg.reply('Something went wrong while joining voice. Try again later');
@@ -33,7 +40,7 @@ module.exports = {
  * @param {Discord.VoiceBroadcast} broadcast 
  * @returns whether guild has a subscription
  */
- function guildHasSubscription(msg, broadcast) {
+function guildHasSubscription(msg, broadcast) {
   return (broadcast && broadcast.subscribers)
     ? isGuildSubscribed(msg.member.voice.guild.id, broadcast.subscribers)
     : false;
