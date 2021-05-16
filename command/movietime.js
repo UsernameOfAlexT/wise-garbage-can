@@ -1,5 +1,8 @@
 const ON = 'on';
 const OFF = 'off';
+const utils = require('../utils.js');
+const phraserobj = require('../datalists/statusphraseobjs.js');
+const phraser = require('../datalists/statusphraser.js');
 
 module.exports = {
   name: 'movietime',
@@ -77,7 +80,7 @@ function togglerMv(msg, state) {
   } else if (state === OFF) {
     safeReply(
       msg,
-      '@everyone \nMovie time is over. Return to your previous duties, citizens',
+      `@everyone \nMovie time is over, the channel has closed.\n${getRandomExtraStatus()}`,
       () => { permissionsHandler(msg.channel, false, msg.author) },
       'I have no permission to send messages there. Movietime may already be off',
       false
@@ -98,11 +101,23 @@ function permissionsHandler(channel, boolState, author) {
     })
     .then(() => {
       if (boolState) {
-        channel.send('@everyone \nMovie time has begun and this channel is liberated!');
+        channel.send(
+          `@everyone \nMovie time has begun! `
+          + `The channel is open.\n${getRandomExtraStatus()}`
+        );
       }
     })
     .catch(() => {
       safeUserDm(author, 'I could not update that channel\'s permissions for everyone'
         + '\n Make sure I have been granted the permission to manage channel permissions.');
     });
+}
+
+/**
+ * Return some randomly constructed phrase.
+ * Just to add some fun into the announcements
+ */
+function getRandomExtraStatus() {
+  const wordcount = utils.withChance(80) ? 4 : 2;
+  return phraserobj.chain(phraser.mvt_list, wordcount);
 }
