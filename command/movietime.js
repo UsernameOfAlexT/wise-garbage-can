@@ -1,20 +1,28 @@
+const ON = 'on';
+const OFF = 'off';
+const utils = require('../utils.js');
+const phraserobj = require('../datalists/statusphraseobjs.js');
+const phraser = require('../datalists/statusphraser.js');
+
 module.exports = {
   name: 'movietime',
   aliases: ['mvt'],
-  cd: 10,
+  cd: 5,
   desc: 'Open/close this channel for movie time',
   disallowDm: true,
   ownerOnly: true,
   cleanupRequest: true,
-  usage: '[on/off]',
+  usage: `[${ON}/${OFF}]`,
   execute(msg, args) {
     let targetState;
     if (!args.length) {
-      msg.reply('on/off not specified. Assuming that it is MOVIE TIME')
-        .catch(err => {
-          console.error(`Failed to reply. Probably a permissions error \n`, err);
-        });
-      targetState = 'on'
+      safeReply(
+        msg,
+        `\'${ON}\' or \'${OFF}\' not given. Assuming it is MOVIE TIME`,
+        () => { },
+        'I had no permission to send messages there; Assuming it is MOVIE TIME'
+      );
+      targetState = ON;
     } else {
       targetState = args[0].toLowerCase();
     }
@@ -23,33 +31,65 @@ module.exports = {
   }
 }
 
-// TODO the msg permission failure logic is repeated a bunch
+// TODO may be beneficial to make the 'safe message' functions common
+/**
+ * Reply to a message, handling possible permissions errors by DMing
+ * the original sender of the message
+ * 
+ * @param {Discord.Message} msg message to reply to. Also used to extract other information
+ * @param {String} content content of the reply
+ * @param {Function} thenable paramless function to execute after sending
+ * @param {String} errorContent message to send if the reply fails
+ * @param {Boolean} asReply whether to send as a reply mentioning the original author
+ */
+function safeReply(
+  msg,
+  content,
+  thenable = () => { },
+  errorContent = 'I have no permission to send messages there.',
+  asReply = true,
+) {
+  const promised = asReply
+    ? msg.reply(content)
+    : msg.channel.send(content)
+    ;
+  promised.then(thenable)
+    .catch(() => safeUserDm(msg.author, errorContent));
+}
+
+/**
+ * DM the given user. Catch and log errors
+ * 
+ * @param {Discord.User} user user to DM 
+ * @param {String} content text content
+ */
+function safeUserDm(user, content) {
+  user.send(content)
+    .catch(err => {
+      console.error(`${msg.author.tag} failed to DM with permission warning. \n`, err);
+    });
+}
+
 function togglerMv(msg, state) {
   if (!(msg.channel.type === 'text')) {
     return msg.reply('I dunno how you managed it but this appears to not be a text channel');
   }
 
-  if (state === 'on') {
+  if (state === ON) {
     permissionsHandler(msg.channel, true, msg.author);
-  } else if (state === 'off') {
-    msg.channel.send('@everyone \nMovie time is over. Return to your previous duties, citizens')
-    .then(() => {
-      permissionsHandler(msg.channel, false, msg.author);
-    })
-    .catch(() => {
-      msg.author.send('I have no permission to send messages there, so movietime is probably off already')
-        .catch(err => {
-          console.error(`${msg.author.tag} failed to DM with permission warning. \n`, err);
-        });
-    });
+  } else if (state === OFF) {
+    safeReply(
+      msg,
+      `@everyone \nMovie time is over, the channel has closed.\n${getRandomExtraStatus()}`,
+      () => { permissionsHandler(msg.channel, false, msg.author) },
+      'I have no permission to send messages there. Movietime may already be off',
+      false
+    );
   } else {
-    msg.reply(`${state} is not something I recognize. Use \'on\' or \'off\'.`)
-    .catch(() => {
-      msg.author.send('I have no permission to send messages there, and I didn\'t understand the state anyway')
-        .catch(err => {
-          console.error(`${msg.author.tag} failed to DM with permission warning. \n`, err);
-        });
-    });
+    safeReply(
+      msg,
+      `${state} is not something I recognize. Use \'${ON}\' or \'${OFF}\'.`
+    );
   }
 }
 
@@ -61,15 +101,23 @@ function permissionsHandler(channel, boolState, author) {
     })
     .then(() => {
       if (boolState) {
-        channel.send('@everyone \nMovie time has begun and this channel is liberated!');
+        channel.send(
+          `@everyone \nMovie time has begun! `
+          + `The channel is open.\n${getRandomExtraStatus()}`
+        );
       }
     })
     .catch(() => {
-      author.send('I could not update that channel\'s permissions for everyone'
-        + '\n Make sure I have been granted the permission to manage channel permissions.'
-      )
-        .catch(err => {
-          console.error(`${author.tag} failed to DM with permission warning. \n`, err);
-        });
+      safeUserDm(author, 'I could not update that channel\'s permissions for everyone'
+        + '\n Make sure I have been granted the permission to manage channel permissions.');
     });
+}
+
+/**
+ * Return some randomly constructed phrase.
+ * Just to add some fun into the announcements
+ */
+function getRandomExtraStatus() {
+  const wordcount = utils.withChance(80) ? 4 : 2;
+  return phraserobj.chain(phraser.mvt_list, wordcount);
 }
