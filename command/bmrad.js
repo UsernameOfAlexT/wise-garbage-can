@@ -31,9 +31,11 @@ const BASE_INTER_CHANCE = 20;
 
 // TODO temporary play list to use until we can read from db
 const MOCK_PLAYLIST = [
-  'https://youtu.be/sSkgQM9d3kc',
-  'https://www.youtube.com/watch?v=3MHzNfoulwI',
-  'https://youtu.be/-UzSTJ8aiGg?t=50' // purposefully included to test error handling
+  new AudioInfo('https://youtu.be/L4zyy_NzKww', true, 0.35, "Something"),
+  new AudioInfo('https://youtu.be/b7ciXnuxjyg', true, 0.35, "That Game, JurvySkat"),
+  new AudioInfo('https://youtu.be/sSkgQM9d3kc', true, 0.05, "ESM"),
+  new AudioInfo('https://www.youtube.com/watch?v=3MHzNfoulwI', true, 0.35, "Ducky MoMo"),
+  new AudioInfo('https://youtu.be/-UzSTJ8aiGg?t=50', true, 0.35, "lolwut"), // purposefully included to test error handling
 ];
 
 // observing channels that should have info given to them
@@ -164,11 +166,7 @@ function getBmradBroadcast(client, shouldInit = true) {
       }
     });
 
-    let track = utils.pickRandomly(MOCK_PLAYLIST);
-    let initialTrack = new AudioInfo(
-      track,
-      true
-    );
+    let initialTrack = utils.pickRandomly(MOCK_PLAYLIST);
     playbroadcast(client.bmradbroadcast, initialTrack);
     if (envutils.useDetailedLogging()) {
       const broadcastno = client.voice.broadcasts ? client.voice.broadcasts.length : 0;
@@ -238,44 +236,60 @@ function sendToWatchingChannels(msg) {
  *          can be either a filepath or a full youtube url
  * @param {boolean} isYtUrl whether to treat name as a url when trying to play
  * @param {Number} volume number that decides the volume of the file
+ * @param {String} display human readable name.
  */
-function AudioInfo(name, isYtUrl, volume = 0.8) {
+function AudioInfo(name, isYtUrl, volume = 0.8, display = "") {
   this.name = name;
   this.isYtUrl = isYtUrl;
   this.volume = volume;
+  this.display = display;
 }
 
 /**
  * Use the given broadcast to attempt to play something resolvable
  * to audio. Returns the created dispatcher
  * 
- * @param {Discord.BroadcastDispatcher} broadcast broadcast to play on
+ * @param {Discord.VoiceBroadcast} broadcast broadcast to play on
  * @param {*} playable anything that is playable using a broadcast
  * @param {Number} volume  volume modifier for the sound
  * @param {Boolean} isYtUrl whether to treat playable as a YouTube url
  */
 function playSingle(broadcast, playable, volume, isYtUrl) {
-  return isYtUrl
-    ? broadcast.play(
-      playable,
-      {
-        type: 'opus',
-        volume: volume
-      }
-    )
-    : broadcast.play(
-      playable,
-      {
-        volume: volume
-      }
-    )
-    ;
+  const options = isYtUrl
+    ? { type: 'opus', volume: volume } : { volume: volume }
+  return broadcast.play(
+    playable,
+    options
+  )
+}
+
+/**
+ * Decide and play the next track on the broadcast
+ * 
+ * @param {Discord.VoiceBroadcast} broadcast  to play on
+ * @param {*} interchance 
+ */
+function chooseNextTrackAndPlay(broadcast, interchance) {
+  // with a certain chance, play an 'intermission' afterward instead
+  if (utils.withChance(interchance)) {
+    // construct the sound path based on the names
+    let intermission = utils.pickRandomly(INTERMISSIONS);
+    let sndplay = new AudioInfo(
+      REL_PATH_INTERMISSION_SND_DIR + intermission,
+      false
+    );
+    playbroadcast(broadcast, sndplay);
+  } else {
+    // TODO for now just takes from a static list but should be randomizing from DB
+    let track = utils.pickRandomly(MOCK_PLAYLIST);
+    playbroadcast(broadcast, track, interchance + 20);
+  }
 }
 
 /**
  * Begin the play loop for a broadcast
  * 
- * @param {Discord.BroadcastDispatcher} broadcast broadcast to play on
+ * @param {Discord.VoiceBroadcast} broadcast broadcast to play on
  * @param {AudioInfo} audioinfoobj object containing info on what to play
  * @param {Number} interchance chance to play an intermission afterward
  */
@@ -286,13 +300,18 @@ async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_C
   if (audioinfoobj.isYtUrl) {
     try {
       // if a youtube link is to be played, await and check it first
-      toPlay = await ytdl(audioinfoobj.name, { filter: 'audioonly' });
+      toPlay = await ytdl(audioinfoobj.name, {
+        filter: 'audioonly',
+        quality: 'highestaudio',
+        highWaterMark: 1 << 25
+      });
       // TODO fetch more human readable names if possible
       sendToWatchingChannels(
         new Discord.MessageEmbed()
           .setColor(EMBEDCLR)
           .setTitle("Now Playing")
-          .setDescription(`${audioinfoobj.name}`)
+          .setDescription(`${audioinfoobj.display} : \n${audioinfoobj.name}`)
+          .setURL(`${audioinfoobj.name}`)
       );
     } catch {
       // Error feedback to subscribed channels
@@ -319,35 +338,20 @@ async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_C
     audioinfoobj.volume,
     audioinfoobj.isYtUrl
   );
-
-  dispatch.on('start', () => {
-    envutils.logDetail(`Radio playing ${audioinfoobj.name}`);
-  });
   dispatch.on('error', (err) => {
     console.error(`Error while playing ${audioinfoobj.name}: ${err}`);
-    broadcast.end();
+    sendToWatchingChannels(
+      new Discord.MessageEmbed()
+        .setColor(EMBEDCLR)
+        .setTitle("Something went wrong!")
+        .setDescription("Attempting to skip ahead to another track...")
+    );
+
+    // only the dispatch messed up, we may be able to still recover
+    chooseNextTrackAndPlay(broadcast, interchance);
   });
   dispatch.on('finish', () => {
     envutils.logDetail(`Changing off of ${audioinfoobj.name} now`);
-
-    // with a certain chance, play an 'intermission' afterward instead
-    if (utils.withChance(interchance)) {
-      // construct the sound path based on the names
-      let intermission = utils.pickRandomly(INTERMISSIONS);
-      let sndplay = new AudioInfo(
-        REL_PATH_INTERMISSION_SND_DIR + intermission,
-        false
-      );
-      playbroadcast(broadcast, sndplay);
-    } else {
-      // TODO for now just takes from a static list but should be randomizing from DB
-      let track = utils.pickRandomly(MOCK_PLAYLIST);
-      let ytplay = new AudioInfo(
-        track,
-        true,
-        0.35
-      );
-      playbroadcast(broadcast, ytplay, interchance + 20);
-    }
+    chooseNextTrackAndPlay(broadcast, interchance);
   });
 }
