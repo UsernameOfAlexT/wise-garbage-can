@@ -32,8 +32,8 @@ const BASE_INTER_CHANCE = 20;
 // TODO temporary play list to use until we can read from db
 const MOCK_PLAYLIST = [
   new AudioInfo('https://youtu.be/L4zyy_NzKww', true, 0.35, "Something"),
-  new AudioInfo('https://youtu.be/b7ciXnuxjyg', true, 0.35, "That Game, JurvySkat"),
-  new AudioInfo('https://youtu.be/sSkgQM9d3kc', true, 0.05, "ESM"),
+  new AudioInfo('https://youtu.be/b7ciXnuxjyg', true, 0.55, "That Game, JurvySkat"),
+  new AudioInfo('https://youtu.be/sSkgQM9d3kc', true, 0.15, "ESM"),
   new AudioInfo('https://www.youtube.com/watch?v=3MHzNfoulwI', true, 0.35, "Ducky MoMo"),
   new AudioInfo('https://youtu.be/-UzSTJ8aiGg?t=50', true, 0.35, "lolwut"), // purposefully included to test error handling
 ];
@@ -45,6 +45,8 @@ const MOCK_PLAYLIST = [
 const WATCHING_CHANNELS = new Map();
 
 const EMBEDCLR = '#7f3fbf';
+const ERR_EMBEDCLR = '#962b2b';
+const TRACK_EMBEDCLR = '#a6a6ad';
 
 module.exports = {
   name: 'bmrad',
@@ -84,7 +86,8 @@ module.exports = {
     const subcommandname = args.shift().toLowerCase();
 
     // do we actually have this command?
-    const subcmd = bmradsub.get(subcommandname);
+    const subcmd = bmradsub.get(subcommandname)
+      || bmradsub.find(cmd => cmd.aliases && cmd.aliases.includes(subcommandname));
     if (!subcmd) {
       return msg.reply(`${subcommandname} is not a recognized command`);
     }
@@ -137,7 +140,6 @@ function getBmradBroadcast(client, shouldInit = true) {
     // create the broadcast, kick off the play loop and set listeners
     client.bmradbroadcast = client.voice.createBroadcast();
 
-    // TODO possible source of errors if things happen too close together
     client.bmradbroadcast.on('subscribe', dispatch => {
       envutils.logDetail(`New bmrad subscriber`);
     });
@@ -294,30 +296,35 @@ function chooseNextTrackAndPlay(broadcast, interchance) {
  * @param {Number} interchance chance to play an intermission afterward
  */
 async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_CHANCE) {
+  // failsafe to prevent "zombie" playing - do not try to play on a dead broadcast
+  if (!broadcast || broadcast !== broadcast.client.bmradbroadcast) {
+    console.error("Prevented something from playing on inactive broadcast");
+    return;
+  }
   envutils.logDetail(`Intermission chance is at ${interchance}`);
 
   let toPlay = audioinfoobj.name;
   if (audioinfoobj.isYtUrl) {
     try {
       // if a youtube link is to be played, await and check it first
+      // this configuration *should* minimize any lag/strange disconnects
       toPlay = await ytdl(audioinfoobj.name, {
         filter: 'audioonly',
         quality: 'highestaudio',
         highWaterMark: 1 << 25
       });
-      // TODO fetch more human readable names if possible
       sendToWatchingChannels(
         new Discord.MessageEmbed()
-          .setColor(EMBEDCLR)
-          .setTitle("Now Playing")
-          .setDescription(`${audioinfoobj.display} : \n${audioinfoobj.name}`)
+          .setColor(TRACK_EMBEDCLR)
+          .setTitle(`Now Playing: ${audioinfoobj.display}`)
+          .setDescription(`Source: \n${audioinfoobj.name}`)
           .setURL(`${audioinfoobj.name}`)
       );
     } catch {
       // Error feedback to subscribed channels
       sendToWatchingChannels(
         new Discord.MessageEmbed()
-          .setColor(EMBEDCLR)
+          .setColor(ERR_EMBEDCLR)
           .setTitle("Error Recovery")
           .setDescription(`Tried: ${audioinfoobj.name} but it seems unavailable`)
       );
@@ -342,7 +349,7 @@ async function playbroadcast(broadcast, audioinfoobj, interchance = BASE_INTER_C
     console.error(`Error while playing ${audioinfoobj.name}: ${err}`);
     sendToWatchingChannels(
       new Discord.MessageEmbed()
-        .setColor(EMBEDCLR)
+        .setColor(ERR_EMBEDCLR)
         .setTitle("Something went wrong!")
         .setDescription("Attempting to skip ahead to another track...")
     );
