@@ -7,6 +7,8 @@ const {
   Leadin,
   Terminator 
 } = require('./statusphraseobjs.js');
+const NAME_PLACEHOLDER = "\$\(PLACEHOLDER\)";
+exports.named_placeholder = NAME_PLACEHOLDER;
 
 exports.standard_list = [
   new Subject("Triangle"),
@@ -127,6 +129,19 @@ exports.mvt_list = [
   new Terminator("Professionals"),
   new Terminator("Co."),
   new Terminator("- A Family Company"),
+];
+
+exports.user_act_list = [
+  new Leadin("Tales of"),
+  new Leadin("Book of"),
+  new Leadin("The Great"),
+  new Leadin("The Fall of"),
+  new Leadin("The Rise of"),
+  new Subject(NAME_PLACEHOLDER),
+  new Terminator("Deluxe Edition"),
+  new Terminator("Gold Edition"),
+  new Terminator("Disk 3 of 8"),
+  new Terminator("Part 2"),
 ];
 
 exports.relevant_start_statuses = [

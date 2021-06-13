@@ -19,6 +19,8 @@ intentsUsed.remove([
 
 const client = new Discord.Client({ ws: { intents: intentsUsed } });
 const cooldowns = new Discord.Collection();
+let voiceStateLastUpdate = Date.now();
+const VOICE_MIN_CD = 5000; // 5 seconds min between updates
 
 client.commands = new Discord.Collection();
 // get all files in commands, then reduce to only things ending in .js
@@ -134,6 +136,30 @@ client.on('message', message => {
     console.error(error);
     message.reply(`${commandName} failed. Something went wrong. Contact Dev and yell at them to fix this`);
   }
+});
+
+// Sometimes change activity on some voice state changes. Also for fun.
+client.on('voiceStateUpdate', (oldState, newState) => {
+  // Prevent changing too frequently
+  const now = Date.now();
+
+  // if this isn't set for some reason, then assume it does not apply
+  if (voiceStateLastUpdate) {
+    const expireTime = voiceStateLastUpdate + VOICE_MIN_CD;
+    // don't do this every possible time
+    if (now < expireTime || utils.withChance(75)) {
+      return;
+    }
+  }
+  voiceStateLastUpdate = now;
+  const subject = newState.member.displayName ? newState.member.displayName : "Someone";
+  // Replace the placeholder string
+  const formattedact = phraserobj.chain(phraser.user_act_list, 3)
+    .replaceAll(phraser.named_placeholder, subject);
+  client.user.setActivity(
+    formattedact,
+    { type: utils.pickRandomly(phraser.relevant_start_statuses) }
+  ).catch(err => console.error(err));
 });
 
 client.login(bot_token);
