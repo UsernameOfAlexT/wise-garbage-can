@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('fs');
-const Discord = require('discord.js');
+const {Discord, Intents} = require('discord.js');
 const envutils = require('./envutils.js');
 const utils = require('./utils.js');
 const phraserobj = require('./datalists/statusphraseobjs.js');
@@ -8,16 +8,15 @@ const phraser = require('./datalists/statusphraser.js');
 const bot_token = process.env.BOT_TOKEN;
 const prefix = process.env.CMD_PREFIX;
 
-const intentsUsed = new Discord.Intents(Discord.Intents.ALL);
-intentsUsed.remove([
-  'GUILD_BANS',
-  'GUILD_PRESENCES',
-  'GUILD_INVITES',
-  'GUILD_INTEGRATIONS',
-  'GUILD_WEBHOOKS'
-]);
+// TODO perhaps the interactions API offers ways for commands to not need message content
+const intentsUsed = new Intents();
+intentsUsed.add(
+  Intents.FLAGS.GUILD_VOICE_STATES,
+  Intents.FLAGS.GUILD_MESSAGES,
+  Intents.FLAGS.DIRECT_MESSAGES
+  );
 
-const client = new Discord.Client({ ws: { intents: intentsUsed } });
+const client = new Discord.Client({ intents: intentsUsed });
 const cooldowns = new Discord.Collection();
 let voiceStateLastUpdate = Date.now();
 const VOICE_MIN_CD = 5000; // 5 seconds min between updates
@@ -37,11 +36,10 @@ client.once('ready', () => {
 
   // roll a random status upon each startup. For fun.
   const randactivity = phraserobj.chain(phraser.standard_list, 4);
-  client.user.setActivity(randactivity, { type: utils.pickRandomly(phraser.relevant_start_statuses) })
-    .catch(err => console.error(err));
+  client.user.setActivity(randactivity, { type: utils.pickRandomly(phraser.relevant_start_statuses) });
 });
 
-client.on('message', message => {
+client.on('messageCreate', message => {
   // can check guide for explanations on most of these
 
   // ignore things without prefixes and from bots
@@ -61,7 +59,7 @@ client.on('message', message => {
   }
 
   // DM checking
-  const invokedFromDm = message.channel.type === 'dm';
+  const invokedFromDm = message.channel.type === 'DM';
   if (command.disallowDm && invokedFromDm) {
     return message.reply(`${commandName}, you can\'t use that here`);
   }
@@ -81,7 +79,7 @@ client.on('message', message => {
   }
 
   // Owner only checking
-  if (command.ownerOnly && !(message.author.id === message.guild.ownerID)) {
+  if (command.ownerOnly && !(message.author.id === message.guild.ownerId)) {
     return message.reply(`${commandName}\'s power can be used only by the server owner`)
   }
 

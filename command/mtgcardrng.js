@@ -17,7 +17,7 @@ module.exports = {
   needSendPerm: true,
   usage: '[optional; # of cards to get]',
   execute(msg, args) {
-    if (!(msg.channel.type === 'text')) {
+    if (!(msg.channel.type === 'GUILD_TEXT')) {
       return msg.reply('This needs to be used from text channels');
     }
 

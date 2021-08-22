@@ -65,7 +65,7 @@ function titheHandler(msg, args, titheAuthor) {
         .catch(() => {
           msg.reply('I have failed to delete the original tithe');
         })
-
+        // TODO this can no longer be done in v13
       titheMsg.delete({ timeout: timeUntilTithe * 1000 })
         .then(() => {
           titheMsg = [];

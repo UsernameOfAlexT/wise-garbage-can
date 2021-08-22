@@ -71,7 +71,7 @@ function safeUserDm(user, content) {
 }
 
 function togglerMv(msg, state) {
-  if (!(msg.channel.type === 'text')) {
+  if (!(msg.channel.type === 'GUILD_TEXT')) {
     return msg.reply('I dunno how you managed it but this appears to not be a text channel');
   }
 

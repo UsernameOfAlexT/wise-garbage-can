@@ -19,7 +19,7 @@ module.exports = {
 
       msg.author.send(msgToBuild, { split : true})
         .then(() => {
-          if (!(msg.channel.type === 'dm')) {
+          if (!(msg.channel.type === 'DM')) {
             msg.reply('Check your DMs for my commands');
           }
         })
