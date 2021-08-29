@@ -63,7 +63,7 @@ client.on('messageCreate', message => {
   if (command.disallowDm && invokedFromDm) {
     return message.reply(`${commandName}, you can\'t use that here`);
   }
-  console.log(`${message.channel.id} checking permissions for ${client.user.id}`);
+  
   // permissions checking for sending messages (a basic requirement)
   if (command.needSendPerm && !invokedFromDm
     && !(message.channel.permissionsFor(client.user).has(Permissions.FLAGS.SEND_MESSAGES))) {
