@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('fs');
-const {Discord, Intents} = require('discord.js');
+const { Client, Intents, Collection, Permissions } = require('discord.js');
 const envutils = require('./envutils.js');
 const utils = require('./utils.js');
 const phraserobj = require('./datalists/statusphraseobjs.js');
@@ -13,15 +13,16 @@ const intentsUsed = new Intents();
 intentsUsed.add(
   Intents.FLAGS.GUILD_VOICE_STATES,
   Intents.FLAGS.GUILD_MESSAGES,
-  Intents.FLAGS.DIRECT_MESSAGES
-  );
+  Intents.FLAGS.DIRECT_MESSAGES,
+  Intents.FLAGS.GUILDS
+);
 
-const client = new Discord.Client({ intents: intentsUsed });
-const cooldowns = new Discord.Collection();
+const client = new Client({ intents: intentsUsed });
+const cooldowns = new Collection();
 let voiceStateLastUpdate = Date.now();
 const VOICE_MIN_CD = 5000; // 5 seconds min between updates
 
-client.commands = new Discord.Collection();
+client.commands = new Collection();
 // get all files in commands, then reduce to only things ending in .js
 const commandFiles = fs.readdirSync('./command').filter(file => file.endsWith('.js'));
 
@@ -41,7 +42,6 @@ client.once('ready', () => {
 
 client.on('messageCreate', message => {
   // can check guide for explanations on most of these
-
   // ignore things without prefixes and from bots
   if (!message.content.startsWith(prefix) || message.author.bot) {
     return;
@@ -63,16 +63,16 @@ client.on('messageCreate', message => {
   if (command.disallowDm && invokedFromDm) {
     return message.reply(`${commandName}, you can\'t use that here`);
   }
-
+  console.log(`${message.channel.id} checking permissions for ${client.user.id}`);
   // permissions checking for sending messages (a basic requirement)
   if (command.needSendPerm && !invokedFromDm
-    && !(message.channel.permissionsFor(client.user).has('SEND_MESSAGES'))) {
+    && !(message.channel.permissionsFor(client.user).has(Permissions.FLAGS.SEND_MESSAGES))) {
     const msgToBuild = [];
     msgToBuild.push(`I was going to execute ${commandName}`);
     msgToBuild.push('But, I need permission to send messages in the channel you requested it');
     msgToBuild.push('Give me permission so I can meaningfully perform it.');
     msgToBuild.push('Or, if the command was going to grant permission, it may just be on cooldown.');
-    return message.author.send(msgToBuild, { split: true })
+    return message.author.send(msgToBuild.join('\n'))
       .catch(err => {
         console.error(`${message.author.tag} failed to DM with permission warning. \n`, err);
       });
@@ -85,7 +85,7 @@ client.on('messageCreate', message => {
 
   // checking cooldowns to prevent spam
   if (!cooldowns.has(command.name)) {
-    cooldowns.set(command.name, new Discord.Collection());
+    cooldowns.set(command.name, new Collection());
   }
 
   const now = Date.now();
@@ -104,7 +104,7 @@ client.on('messageCreate', message => {
           const msgToBuild = [];
           msgToBuild.push('I am DMing you because I lack permission to respond in the channel you requested me from');
           msgToBuild.push(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
-          message.author.send(msgToBuild, { split: true })
+          message.author.send(msgToBuild.join('\n'))
             .catch(err => {
               console.error(`${message.author.tag} failed to DM with permission warning. \n`, err);
             });
@@ -116,7 +116,7 @@ client.on('messageCreate', message => {
 
   // delete the original invoke msg from non-dms if required
   if (!invokedFromDm && command.cleanupRequest) {
-    const hasDeleteMsgPerm = message.channel.permissionsFor(client.user).has('MANAGE_MESSAGES');
+    const hasDeleteMsgPerm = message.channel.permissionsFor(client.user).has(Permissions.FLAGS.MANAGE_MESSAGES);
     if (envutils.useDetailedLogging()) {
       console.log(`${hasDeleteMsgPerm ? "Has" : "Lacks"} delete permissions for this channel`);
     }

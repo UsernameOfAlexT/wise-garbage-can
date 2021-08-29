@@ -16,8 +16,9 @@ module.exports = {
       msgToBuild.push('These are my commands:');
       msgToBuild.push(commands.map(command => command.name).join(', '));
       msgToBuild.push(`\n \'${prefix}help [command name]\' will get you detailed info`);
-
-      msg.author.send(msgToBuild, { split : true})
+      // This is unlikely to exceed 2000 characters, but if it does it will
+      // need to be manually split to prevent truncation
+      msg.author.send(msgToBuild.join('\n'))
         .then(() => {
           if (!(msg.channel.type === 'DM')) {
             msg.reply('Check your DMs for my commands');
@@ -49,7 +50,7 @@ module.exports = {
       }
       msgToBuild.push(` |- Cooldown -| : ${command.cd || 3} second(s)`);
 
-      msg.channel.send(msgToBuild, { split : true });
+      msg.channel.send(msgToBuild.join('\n'));
     }
   }
 }

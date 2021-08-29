@@ -30,7 +30,7 @@ module.exports = {
     // handle various informational commands
     const infomsg = handleInfoCommands(args);
     if (infomsg.length) {
-      return msg.author.send(infomsg, { split: true });
+      return msg.author.send(infomsg.join('\n'));
     }
 
     // perform various checks to make sure what we are about to try is valid

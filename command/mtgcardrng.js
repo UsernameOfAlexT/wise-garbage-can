@@ -25,7 +25,7 @@ module.exports = {
     premsgToBuild.push('I have heard your request. Allow me some time to consult the elders');
     let pageSizeParsed = parseNumberArg(args, premsgToBuild);
 
-    msg.channel.send(premsgToBuild, { split: true });
+    msg.channel.send(premsgToBuild.join('\n'));
     /** 
      * note: I would like to use contains to filter out image-less results but it
      *  doesn't seem to behave when used with random

@@ -1,4 +1,4 @@
-const {master_name_array, tithetaker_responses} = require('../defaultlists.json');
+const { master_name_array, tithetaker_responses } = require('../defaultlists.json');
 const utils = require('../utils.js');
 const DEF_TIME = 5;
 const MAX_WAIT_TIME = 600;
@@ -15,7 +15,7 @@ module.exports = {
     if (!args.length) {
       return msg.reply("It is insulting to offer nothing to the gods!");
     }
-    
+
     if (!msg.channel.guild.available) { return; }
     // supposed to resolve to the author
     msg.channel.guild.members.fetch(msg)
@@ -59,14 +59,13 @@ function titheHandler(msg, args, titheAuthor) {
   msgToBuild.push(`\n${content}\n`);
   msgToBuild.push(`This tithe will be collected in ${timeUntilTithe} seconds(s).`);
 
-  msg.channel.send(msgToBuild)
+  msg.channel.send(msgToBuild.join('\n'))
     .then(titheMsg => {
       msg.delete()
         .catch(() => {
           msg.reply('I have failed to delete the original tithe');
         })
-        // TODO this can no longer be done in v13
-      titheMsg.delete({ timeout: timeUntilTithe * 1000 })
+      setTimeout(() => titheMsg.delete()
         .then(() => {
           titheMsg = [];
           titheMsg.push(`Your tithe has been collected by ${titheTaker(master_name_array)}`);
@@ -75,7 +74,8 @@ function titheHandler(msg, args, titheAuthor) {
         })
         .catch(() => {
           msg.reply('I have failed in my duty to collect this tithe');
-        });
+        })
+        , timeUntilTithe * 1000);
     });
 }
 // todo replace all instances of this w/ the utils ver
