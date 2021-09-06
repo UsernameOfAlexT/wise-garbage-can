@@ -1,4 +1,5 @@
 const { master_name_array, tithetaker_responses } = require('../defaultlists.json');
+const { Formatters } = require('discord.js');
 const utils = require('../utils.js');
 const DEF_TIME = 5;
 const MAX_WAIT_TIME = 600;
@@ -13,19 +14,11 @@ module.exports = {
   usage: '{optional tithe time (seconds)} | [tithe message]',
   execute(msg, args) {
     if (!args.length) {
-      return msg.reply("It is insulting to offer nothing to the gods!");
+      return utils.safeReply(msg, "It is insulting to offer nothing to the gods!");
     }
 
-    if (!msg.channel.guild.available) { return; }
-    // supposed to resolve to the author
-    msg.channel.guild.members.fetch(msg)
-      .then(titheAuthor => {
-        titheHandler(msg, args, titheAuthor);
-      })
-      .catch(err => {
-        msg.reply("Unholy magic prevents me from collecting your tithe");
-        console.error(`${msg.author.tag} could not be resolved to a guildmember \n`, err);
-      });
+    if (!msg.channel.guild.available || !msg.author) { return; }
+    titheHandler(msg, args);
   }
 }
 
@@ -45,17 +38,17 @@ function titheTime(msg, args) {
   return DEF_TIME;
 }
 
-function titheHandler(msg, args, titheAuthor) {
+function titheHandler(msg, args) {
   const timeUntilTithe = titheTime(msg, args);
 
   if (timeUntilTithe > MAX_WAIT_TIME) {
-    return msg.reply(`The gods are impatient and will not wait more than ${MAX_WAIT_TIME} second(s)`);
+    return utils.safeReply(msg, `The gods are impatient and will not wait more than ${MAX_WAIT_TIME} second(s)`);
   }
 
   const content = args.join(' ');
 
   msgToBuild = [];
-  msgToBuild.push(`${titheAuthor.displayName} has offered the following tithe: `);
+  msgToBuild.push(`${Formatters.userMention(msg.author.id)} offers the following tithe: `);
   msgToBuild.push(`\n${content}\n`);
   msgToBuild.push(`This tithe will be collected in ${timeUntilTithe} seconds(s).`);
 
@@ -63,24 +56,18 @@ function titheHandler(msg, args, titheAuthor) {
     .then(titheMsg => {
       msg.delete()
         .catch(() => {
-          msg.reply('I have failed to delete the original tithe');
+          utils.safeReply(msg, 'I have failed to delete the original tithe');
         })
       setTimeout(() => titheMsg.delete()
         .then(() => {
           titheMsg = [];
-          titheMsg.push(`Your tithe has been collected by ${titheTaker(master_name_array)}`);
-          titheMsg.push(`${titheTaker(tithetaker_responses)}`);
-          msg.reply(titheMsg);
+          titheMsg.push(`Your tithe has been collected by ${utils.pickRandomly(master_name_array)}`);
+          titheMsg.push(`${utils.pickRandomly(tithetaker_responses)}`);
+          utils.safeMention(msg, titheMsg.join('\n'));
         })
         .catch(() => {
-          msg.reply('I have failed in my duty to collect this tithe');
+          utils.safeReply(msg, 'I have failed in my duty to collect this tithe');
         })
         , timeUntilTithe * 1000);
     });
-}
-// todo replace all instances of this w/ the utils ver
-function titheTaker(choices) {
-  let choseni = utils.randomInt(choices.length);
-  let subject = utils.pickSafely(choseni, choices);
-  return subject;
 }

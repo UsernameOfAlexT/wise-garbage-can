@@ -1,3 +1,11 @@
+const {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  StreamType,
+  VoiceConnectionStatus
+} = require('@discordjs/voice');
 const vcsfxsupp = require('./vcsfxsupport/vcsfxsupp.js');
 const utils = require('../utils.js');
 const envutils = require('../envutils.js');
@@ -44,7 +52,7 @@ module.exports = {
     if (!msg.channel.guild.available) { return; }
 
     if (!msg.member.voice.channel) {
-      return msg.reply(
+      return utils.safeMention(msg,
         'That\'s a totally non-existent voice channel you\'re in. ' +
         'Join a real one and we\'ll talk.'
       );
@@ -54,48 +62,53 @@ module.exports = {
     const fileToPlay = !args.length ? randomSfx() : specificSfx(args);
 
     if (!fileToPlay) {
-      return msg.reply(
+      return utils.safeMention(msg,
         `No matches. Use \'vcsfx tags\' or \'vcsfx names\'` +
         `\nReminder: Include ${TAG_SOUND_PREFIX}` +
         ` for searching by tag`
       );
     }
-    // use fs to check validity. connection.play will handle invalid inputs fine
-    // but some feedback is good for debug/ux/whatever
-    fs.access(fileToPlay, err => {
-      if (err) {
-        msg.reply('Something seems wrong with the sound file. Try again later');
-        console.error(`${err} thrown trying to access sound file`);
-        return;
+
+    const connection = joinVoiceChannel({
+      channelId: msg.member.voice.channel.id,
+      guildId: msg.member.voice.channel.guild.id,
+      adapterCreator: msg.member.voice.channel.guild.voiceAdapterCreator
+    });
+
+    // TODO does this fail messily for non opus?
+    let resource = createAudioResource(fs.createReadStream(fileToPlay), {
+      inputType: StreamType.OggOpus
+    });
+
+    const player = createAudioPlayer();
+    player.play(resource);
+    connection.subscribe(player);
+
+    // Various logging and error event handlers
+    player.on(AudioPlayerStatus.Playing, () => {
+      if (envutils.useDetailedLogging()) {
+        console.log(`I should be playing ${fileToPlay} now`);
       }
     });
-    // when two things try to play at once, it just overrides the older
-    msg.member.voice.channel.join()
-      .then(connection => {
-        // NOTE: if the file[path] is invalid then this just finishes immediately
-        const dispatch = connection.play(fileToPlay, { volume: 0.8 });
-        dispatch.on('start', () => {
-          if (envutils.useDetailedLogging()) {
-            console.log(`I should be playing ${fileToPlay} now`);
-          }
-        });
-        dispatch.on('error', () => {
-          msg.reply('We had some trouble playing that one. Try again later.');
-          console.error(`Error while playing ${fileToPlay}`);
-          connection.disconnect();
-        });
-        dispatch.on('finish', () => {
-          if (envutils.useDetailedLogging()) {
-            console.log(`I should be done playing ${fileToPlay} now`);
-          }
-          connection.disconnect();
-        });
-      })
-      .catch(err => {
-        msg.reply('Something went wrong while joining voice. Try again later');
-        console.error(`Error joining voice: ${err}`);
-      });
-
+    player.on('error', error => {
+      utils.safeMention(msg, 'We had some trouble playing that one. Try again later.');
+      console.error(`Error while playing ${fileToPlay}: ${error}`);
+      // this eventually falls naturally to the idle state
+    });
+    player.on(AudioPlayerStatus.Idle, () => {
+      if (envutils.useDetailedLogging()) {
+        console.log(`${fileToPlay} should no longer be playing`);
+      }
+      player.stop();
+      connection.destroy();
+    });
+    
+    // logging events etc. for the connection itself
+    connection.on(VoiceConnectionStatus.Destroyed, () => {
+      if (envutils.useDetailedLogging()) {
+        console.log(`Voice connection has been destroyed`);
+      }
+    });
   }
 }
 

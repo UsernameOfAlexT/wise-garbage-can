@@ -61,9 +61,9 @@ client.on('messageCreate', message => {
   // DM checking
   const invokedFromDm = message.channel.type === 'DM';
   if (command.disallowDm && invokedFromDm) {
-    return message.reply(`${commandName}, you can\'t use that here`);
+    return utils.safeReply(message, `${commandName}, you can\'t use that here`);
   }
-  
+
   // permissions checking for sending messages (a basic requirement)
   if (command.needSendPerm && !invokedFromDm
     && !(message.channel.permissionsFor(client.user).has(Permissions.FLAGS.SEND_MESSAGES))) {
@@ -80,7 +80,7 @@ client.on('messageCreate', message => {
 
   // Owner only checking
   if (command.ownerOnly && !(message.author.id === message.guild.ownerId)) {
-    return message.reply(`${commandName}\'s power can be used only by the server owner`)
+    return utils.safeReply(message, `${commandName}\'s power can be used only by the server owner`)
   }
 
   // checking cooldowns to prevent spam
@@ -98,17 +98,7 @@ client.on('messageCreate', message => {
 
     if (now < expireTime) {
       const left = (expireTime - now) / 1000;
-      return message.reply(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`)
-        .catch(() => {
-          // most likely culprit is missing permissions, so try to DM
-          const msgToBuild = [];
-          msgToBuild.push('I am DMing you because I lack permission to respond in the channel you requested me from');
-          msgToBuild.push(`\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
-          message.author.send(msgToBuild.join('\n'))
-            .catch(err => {
-              console.error(`${message.author.tag} failed to DM with permission warning. \n`, err);
-            });
-        });
+      return utils.safeReply(message, `\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
     }
   }
   timestamps.set(message.author.id, now);
@@ -132,7 +122,7 @@ client.on('messageCreate', message => {
     command.execute(message, args);
   } catch (error) {
     console.error(error);
-    message.reply(`${commandName} failed. Something went wrong. Contact Dev and yell at them to fix this`);
+    utils.safeReply(message, `${commandName} failed. Something went wrong. Contact Dev and yell at them to fix this`);
   }
 });
 
@@ -154,10 +144,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
   // Replace the placeholder string
   const formattedact = phraserobj.chain(phraser.user_act_list, 3)
     .replaceAll(phraser.named_placeholder, subject);
-  client.user.setActivity(
-    formattedact,
-    { type: utils.pickRandomly(phraser.relevant_start_statuses) }
-  ).catch(err => console.error(err));
+  client.user.setActivity(formattedact, { type: utils.pickRandomly(phraser.relevant_start_statuses) });
 });
 
 client.login(bot_token);

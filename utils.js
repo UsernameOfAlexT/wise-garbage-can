@@ -1,7 +1,9 @@
+const { Formatters } = require('discord.js');
+
 exports.pickSafely = function (targetIndex, sourceList) {
-  return targetIndex < sourceList.length 
-  ? sourceList[targetIndex]
-  : '???'
+  return targetIndex < sourceList.length
+    ? sourceList[targetIndex]
+    : '???'
 }
 
 /**
@@ -55,3 +57,78 @@ exports.choose = function (choices, n) {
   }
   return chosenItems;
 }
+
+/**
+ * Attempts to reply to the given message using discord's reply feature. 
+ * If this fails (usually due to a deleted message) then fall back onto the
+ * legacy behaviour of using mentions.
+ * 
+ * @param {Discord.Message} message message to attempt to reply to
+ * @param {String} reply the reply content
+ */
+exports.safeReply = function (message, reply) {
+  message.reply(reply).catch(err => {
+    console.log("Tried to reply to a deleted message");
+    exports.safeMention(message, reply);
+  });
+}
+
+/**
+ * Replicates the legacy reply behaviour of tagging the user in a mention with
+ * some added checks
+ * 
+ * @param {Discord.Message} message message whose sender will be tagged
+ * @param {String} reply reply content
+ */
+exports.safeMention = function (message, reply) {
+  exports.safeSend(message, Formatters.userMention(message.author.id) + reply);
+}
+
+/**
+ * Send a message to the same channel as another message, catching
+ * any errors.
+ * 
+ * @param {Discord.Message} message message whose sender will be tagged
+ * @param {String} reply reply content
+ * @param {Function} thenable paramless function to execute after sending
+ * @param {Boolean} dmfallback whether to send a dm as fallback behavior or just log
+ * @param {String} dmContent fallback content for the dm
+ */
+exports.safeSend = function (
+  message,
+  reply,
+  thenable = () => { },
+  dmfallback = true,
+  dmContent = ""
+) {
+  if (!message.author) {
+    console.error("Tried to reply to a message with no author");
+    return;
+  }
+  // if not provided, just send what would have been sent in the message + explanation
+  const finalDmContent = (dmfallback && !dmContent)
+    ? `(You are being DM'd because I have no permission to send in that channel)\n${reply}`
+    : dmContent;
+
+  const sendFailHandler = dmfallback
+    ? () => exports.safeUserDm(message.author, finalDmContent)
+    : err => console.error(`Unable to mention due to ${err}`);
+
+  message.channel.send(reply)
+    .then(thenable)
+    .catch(sendFailHandler);
+}
+
+/**
+ * DM the given user. Catch and log errors
+ * 
+ * @param {Discord.User} user user to DM 
+ * @param {String} content text content
+ */
+exports.safeUserDm = function (user, content) {
+  user.send(content)
+    .catch(err => {
+      console.error(`${user.tag} failed to DM with permission warning. \n`, err);
+    });
+}
+
