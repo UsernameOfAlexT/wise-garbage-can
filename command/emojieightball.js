@@ -17,7 +17,7 @@ module.exports = {
 
     // .random() directly on the collection would also work 
     // but I want a mix of guild/unicode emoji
-    let emojicache = msg.channel.guild.emojis.cache.array();
+    let emojicache = [...msg.channel.guild.emojis.cache.values()];
     const targetEmojiNum = parseArgs(msg, args);
     const emojibody = mojibuilder(emojicache, mojiballconstructs.mojiball, targetEmojiNum);
 
@@ -27,7 +27,7 @@ module.exports = {
       : '';
     msg.channel.send(resStr + emojibody)
       .catch(() => {
-        msg.reply('Something went wrong consulting the 8 ball');
+        utils.safeReply(msg, 'Something went wrong consulting the 8 ball')
       });
   }
 }

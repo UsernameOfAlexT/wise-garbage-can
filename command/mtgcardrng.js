@@ -1,4 +1,5 @@
 const mtg = require('mtgsdk');
+const utils = require('../utils.js');
 const MAX_CARD_PAGESIZE = 10;
 const DEFAULT_CARD_PAGESIZE = 1;
 // try to exclude very exotic layouts as they display poorly
@@ -17,15 +18,15 @@ module.exports = {
   needSendPerm: true,
   usage: '[optional; # of cards to get]',
   execute(msg, args) {
-    if (!(msg.channel.type === 'text')) {
-      return msg.reply('This needs to be used from text channels');
+    if (!(msg.channel.type === 'GUILD_TEXT' || msg.channel.type === 'DM')) {
+      return utils.safeReply(msg, 'This needs to be used from text channels or DMs');
     }
 
     premsgToBuild = [];
     premsgToBuild.push('I have heard your request. Allow me some time to consult the elders');
     let pageSizeParsed = parseNumberArg(args, premsgToBuild);
 
-    msg.channel.send(premsgToBuild, { split: true });
+    msg.channel.send(premsgToBuild.join('\n'));
     /** 
      * note: I would like to use contains to filter out image-less results but it
      *  doesn't seem to behave when used with random
@@ -48,7 +49,7 @@ module.exports = {
           addCardInfo(resmsgToBuild, card);
         }
 
-        msg.channel.send(resmsgToBuild, { split: true })
+        msg.channel.send(resmsgToBuild.join('\n'))
           .catch(err => {
             msg.channel.send('We had trouble figuring the card(s) out. Try again later');
             console.error('Display issues. \n', err);

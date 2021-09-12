@@ -19,7 +19,7 @@ module.exports = {
       choices = args;
     }
 
-    msg.reply("The ancient oracle speaks! \n" + oraclePicker(choices));
+    utils.safeReply(msg, "The ancient oracle speaks! \n" + oraclePicker(choices));
   }
 }
 
