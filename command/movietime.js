@@ -3,17 +3,22 @@ const OFF = 'off';
 const utils = require('../utils.js');
 const phraserobj = require('../datalists/statusphraseobjs.js');
 const phraser = require('../datalists/statusphraser.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const STATE_ARG = 'state';
 
 module.exports = {
-  name: 'movietime',
-  aliases: ['mvt'],
+  data: new SlashCommandBuilder()
+    .setName('movietime')
+    .setDescription('Open/Close this channel for movie time')
+    .addBooleanOption(option =>
+      option.setName(STATE_ARG)
+        .setDescription('Whether to set this channel open/close')
+        .setRequired(true)
+    ),
   cd: 5,
-  desc: 'Open/close this channel for movie time',
   disallowDm: true,
   ownerOnly: true,
-  cleanupRequest: true,
-  usage: `[${ON}/${OFF}]`,
-  execute(msg, args) {
+  execute(interaction) {
     let targetState;
     if (!args.length) {
       utils.safeMention(

@@ -10,6 +10,7 @@ const vcsfxsupp = require('./vcsfxsupport/vcsfxsupp.js');
 const utils = require('../utils.js');
 const envutils = require('../envutils.js');
 const fs = require('fs');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 // NOTE: this seems to need to be relative to index, and not this module
 const REL_PATH_TO_SOUND_DIR = 'sound/';
 const TAG_SOUND_PREFIX = '-t';
@@ -21,6 +22,9 @@ const TAG_SOUND_PREFIX = '-t';
 // it is preferable to have all audio as Ogg/WebM for performance
 
 module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('vsfx')
+    .setDescription('Play some random sounds in the voice channel you are in. Very annoying!'),
   name: 'vcsfx',
   aliases: ['vsfx', 'vcfx', 'vx'],
   cd: 11,
@@ -32,9 +36,7 @@ module.exports = {
     + '\n(If getting exact sounds, only the first name given is considered)',
   disallowDm: false,
   needSendPerm: true,
-  cleanupRequest: true,
-  usage: '{optional tags}',
-  execute(msg, args) {
+  execute(interaction) {
     // handle various informational commands
     const infomsg = handleInfoCommands(args);
     if (infomsg.length) {
@@ -102,7 +104,7 @@ module.exports = {
       player.stop();
       connection.destroy();
     });
-    
+
     // logging events etc. for the connection itself
     connection.on(VoiceConnectionStatus.Destroyed, () => {
       if (envutils.useDetailedLogging()) {

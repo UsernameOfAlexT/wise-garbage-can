@@ -1,23 +1,27 @@
 const mtg = require('mtgsdk');
 const utils = require('../utils.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const MAX_CARD_PAGESIZE = 10;
 const DEFAULT_CARD_PAGESIZE = 1;
 // try to exclude very exotic layouts as they display poorly
 const RELEVANT_LAYOUTS = "normal|split|flip|double-faced|aftermath";
+const CARDNO_ARG = 'number';
 /** 
  * Using magicthegathering.io's api endpoints.
  * Ratelimited to 5000/hr but we really shouldn't be coming anywhere remotely close
  */
 
 module.exports = {
-  name: 'mtgcardrng',
-  aliases: ['mtgrng', 'rnmtg'],
+  data: new SlashCommandBuilder()
+    .setName('mtgrng')
+    .setDescription('Grab a number of random MTG card(s) and show them')
+    .addIntegerOption(option =>
+      option.setName(CARDNO_ARG)
+        .setDescription('Optional number of cards to fetch (default 1)')),
   cd: 30,
-  desc: 'Grab a number of random MTG card(s) and show them',
   disallowDm: false,
   needSendPerm: true,
-  usage: '[optional; # of cards to get]',
-  execute(msg, args) {
+  execute(interaction) {
     if (!(msg.channel.type === 'GUILD_TEXT' || msg.channel.type === 'DM')) {
       return utils.safeReply(msg, 'This needs to be used from text channels or DMs');
     }

@@ -1,18 +1,30 @@
 const { master_name_array, tithetaker_responses } = require('../defaultlists.json');
 const { Formatters } = require('discord.js');
 const utils = require('../utils.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const DEF_TIME = 5;
 const MAX_WAIT_TIME = 600;
+const TIME_ARG = 'time';
+const NAME_ARG = 'tithe'
 
 module.exports = {
-  name: 'tithe',
-  aliases: ['temp'],
+  data: new SlashCommandBuilder()
+    .setName('tithe')
+    .setDescription('Make temporary messages that will be collected as tithes later')
+    .addStringOption(option =>
+      option.setName(NAME_ARG)
+        .setRequired(true)
+        .setDescription('Optional name of command to get info on'))
+    .addIntegerOption(option =>
+      option.setName(TIME_ARG)
+        .setDescription('Time until collection in seconds (Max 600)')
+    )
+  ,
   cd: 6,
-  desc: 'Make temporary messages that will be collected as tithes later',
   disallowDm: true,
   needSendPerm: true,
   usage: '{optional tithe time (seconds)} | [tithe message]',
-  execute(msg, args) {
+  execute(interaction) {
     if (!args.length) {
       return utils.safeReply(msg, "It is insulting to offer nothing to the gods!");
     }

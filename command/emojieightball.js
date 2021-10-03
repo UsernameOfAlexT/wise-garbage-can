@@ -1,18 +1,29 @@
 const mojiballconstructs = require('./emojieightballsupport/mojiballconstructs.js');
 const utils = require('../utils.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const DEFAULT_EMOJI_NO = 3;
 const MAX_EMOJI_NO = 10;
 const GUILD_SELECTION_CHANCE = 25;
+const QUESTION_ARG = 'question';
+const AMT_ARG = 'number';
 
 module.exports = {
-  name: 'emojieightball',
-  aliases: ['mojiball', 'emoji8ball', 'e8ball'],
+  data: new SlashCommandBuilder()
+    .setName('emoji8ball')
+    .setDescription('Pose a question to the emojic 8 ball')
+    .addStringOption(option =>
+      option.setName(QUESTION_ARG)
+        .setDescription('Optional question to pose')
+    )
+    .addIntegerOption(option =>
+      option.setName(AMT_ARG)
+        .setDescription('Optional number of emoji to return (default 3)')
+    )
+  ,
   cd: 5,
-  desc: 'Ask the emojic 8 ball a question',
   disallowDm: true,
   needSendPerm: true,
-  usage: '{optional emoji number} | {optional question}',
-  execute(msg, args) {
+  execute(interaction) {
     if (!msg.channel.guild.available) { return; }
 
     // .random() directly on the collection would also work 

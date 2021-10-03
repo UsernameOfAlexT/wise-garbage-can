@@ -74,6 +74,19 @@ exports.safeReply = function (message, reply) {
 }
 
 /**
+ * Attempts to reply to the given interaction
+ * 
+ * @param {Discord.Interaction} interaction interaction to attempt to reply to
+ * @param {String} reply the reply content
+ * @param {Boolean} ephemeral ephemerality of the reply
+ */
+ exports.safeReply = function (interaction, reply, ephemeral = true) {
+  interaction.reply({ content: reply, ephemeral: ephemeral }).catch(err => {
+    console.log(`Could not reply to interaction due to: ${err}`);
+  });
+}
+
+/**
  * Replicates the legacy reply behaviour of tagging the user in a mention with
  * some added checks
  * 

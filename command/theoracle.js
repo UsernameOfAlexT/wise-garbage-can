@@ -1,15 +1,20 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {oracle_defaults_array} = require('../defaultlists.json');
 const utils = require('../utils.js')
+const OPT_ARGS = 'options'
 
 module.exports = {
-  name: 'theoracle',
-  aliases: ['oracle'],
+  data: new SlashCommandBuilder()
+  .setName('theoracle')
+    .setDescription('Figure out what to do with your life by letting me choose from a list')
+    .addStringOption(option =>
+      option.setName(OPT_ARGS)
+        .setDescription('Optional sequence to choose from.\n' 
+        + 'Separate options using \"|\" i.e.: [option1]|[option2]|[option3] ...')),
   cd: 3,
-  desc: 'Figure out what to do with your life by letting me choose from a list',
   disallowDm: false,
   needSendPerm: true,
-  usage: '[option1] [option2] ...',
-  execute(msg, args) {
+  execute(interaction) {
     let choices = oracle_defaults_array;
 
     if (!args.length) {

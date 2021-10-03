@@ -6,9 +6,7 @@ const utils = require('./utils.js');
 const phraserobj = require('./datalists/statusphraseobjs.js');
 const phraser = require('./datalists/statusphraser.js');
 const bot_token = process.env.BOT_TOKEN;
-const prefix = process.env.CMD_PREFIX;
 
-// TODO perhaps the interactions API offers ways for commands to not need message content
 const intentsUsed = new Intents();
 intentsUsed.add(
   Intents.FLAGS.GUILD_VOICE_STATES,
@@ -28,7 +26,7 @@ const commandFiles = fs.readdirSync('./command').filter(file => file.endsWith('.
 
 for (const file of commandFiles) {
   const command = require(`./command/${file}`);
-  client.commands.set(command.name, command);
+  client.commands.set(command.data.name, command);
 }
 
 client.once('ready', () => {
@@ -40,89 +38,66 @@ client.once('ready', () => {
   client.user.setActivity(randactivity, { type: utils.pickRandomly(phraser.relevant_start_statuses) });
 });
 
-client.on('messageCreate', message => {
-  // can check guide for explanations on most of these
-  // ignore things without prefixes and from bots
-  if (!message.content.startsWith(prefix) || message.author.bot) {
+client.on('interactionCreate', interaction => {
+  // check if it's a command
+  if (!interaction.isCommand()) {
     return;
   }
 
-  // regex for 1+ spaces
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const commandName = args.shift().toLowerCase();
-
-  // do we actually have this command?
+  const { commandName } = interaction;
   const command = client.commands.get(commandName)
-    || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
-  if (!command) {
-    return;
+
+  // guard dm interactions if not allowed
+  const invokedFromDm = interaction.channel && interaction.channel.type === 'DM';
+  // interactions without channels are usually due to uncached dm channels
+  if (command.disallowDm && (invokedFromDm || !interaction.channel)) {
+    return utils.safeReply(interaction, `${commandName}, you can\'t use that here`);
   }
 
-  // DM checking
-  const invokedFromDm = message.channel.type === 'DM';
-  if (command.disallowDm && invokedFromDm) {
-    return utils.safeReply(message, `${commandName}, you can\'t use that here`);
-  }
-
-  // permissions checking for sending messages (a basic requirement)
+  // permissions checks (?)
   if (command.needSendPerm && !invokedFromDm
-    && !(message.channel.permissionsFor(client.user).has(Permissions.FLAGS.SEND_MESSAGES))) {
+    && !(interaction.channel.permissionsFor(client.user).has(Permissions.FLAGS.SEND_MESSAGES))) {
+    utils.safeReply(interaction, 'I need permission to send messages to do that here');
     const msgToBuild = [];
-    msgToBuild.push(`I was going to execute ${commandName}`);
-    msgToBuild.push('But, I need permission to send messages in the channel you requested it');
-    msgToBuild.push('Give me permission so I can meaningfully perform it.');
-    msgToBuild.push('Or, if the command was going to grant permission, it may just be on cooldown.');
-    return message.author.send(msgToBuild.join('\n'))
+    msgToBuild.push(`I tried to execute ${commandName}`);
+    msgToBuild.push(`But I have no permission to do that there.`);
+    return interaction.user.send(msgToBuild.join('\n'))
       .catch(err => {
-        console.error(`${message.author.tag} failed to DM with permission warning. \n`, err);
+        console.error(`${interaction.user.id} failed to DM with permission warning. \n`, err);
       });
   }
 
   // Owner only checking
-  if (command.ownerOnly && !(message.author.id === message.guild.ownerId)) {
-    return utils.safeReply(message, `${commandName}\'s power can be used only by the server owner`)
+  if (command.ownerOnly && !(interaction.user.id === interaction.guild.ownerId)) {
+    return utils.safeReply(interaction, `${commandName}\'s power can be used only by the server owner`)
   }
 
   // checking cooldowns to prevent spam
-  if (!cooldowns.has(command.name)) {
-    cooldowns.set(command.name, new Collection());
+  if (!cooldowns.has(command.data.name)) {
+    cooldowns.set(command.data.name, new Collection());
   }
 
   const now = Date.now();
-  const timestamps = cooldowns.get(command.name);
+  const timestamps = cooldowns.get(command.data.name);
   const cdTime = (command.cd || 3) * 1000;
 
   // get the actual time the cd expires and respond if not yet time
-  if (timestamps.has(message.author.id)) {
-    const expireTime = timestamps.get(message.author.id) + cdTime;
+  if (timestamps.has(interaction.user.id)) {
+    const expireTime = timestamps.get(interaction.user.id) + cdTime;
 
     if (now < expireTime) {
       const left = (expireTime - now) / 1000;
-      return utils.safeReply(message, `\'${command.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
+      return utils.safeReply(interaction, `\'${command.data.name}\' cannot be used again just yet. Wait ${left.toFixed(1)} more second(s)`);
     }
   }
-  timestamps.set(message.author.id, now);
-  setTimeout(() => timestamps.delete(message.author.id), cdTime);
-
-  // delete the original invoke msg from non-dms if required
-  if (!invokedFromDm && command.cleanupRequest) {
-    const hasDeleteMsgPerm = message.channel.permissionsFor(client.user).has(Permissions.FLAGS.MANAGE_MESSAGES);
-    if (envutils.useDetailedLogging()) {
-      console.log(`${hasDeleteMsgPerm ? "Has" : "Lacks"} delete permissions for this channel`);
-    }
-    if (hasDeleteMsgPerm) {
-      message.delete()
-        .catch(err => {
-          console.error(`${err} thrown while trying to delete ${commandName} request`)
-        });
-    }
-  }
+  timestamps.set(interaction.user.id, now);
+  setTimeout(() => timestamps.delete(interaction.user.id), cdTime);
 
   try {
-    command.execute(message, args);
+    command.execute(interaction);
   } catch (error) {
     console.error(error);
-    utils.safeReply(message, `${commandName} failed. Something went wrong. Contact Dev and yell at them to fix this`);
+    utils.safeReply(interaction, `${commandName} failed. Something went wrong. Contact Dev and yell at them to fix this`);
   }
 });
 
