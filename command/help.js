@@ -11,7 +11,7 @@ module.exports = {
         .setDescription('Optional name of command to get info on')),
   cd: 5,
   disallowDm: false,
-  needSendPerm: false, // ephemeral replies seem to bypass msg send permissions
+  needSendPerm: false,
   execute(interaction) {
     const msgToBuild = [];
     const { commands } = interaction.client;

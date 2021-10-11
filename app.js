@@ -54,7 +54,7 @@ client.on('interactionCreate', interaction => {
     return utils.safeReply(interaction, `${commandName}, you can\'t use that here`);
   }
 
-  // permissions checks (?)
+  // permissions checks (note: interaction replies don't need send permissions)
   if (command.needSendPerm && !invokedFromDm
     && !(interaction.channel.permissionsFor(client.user).has(Permissions.FLAGS.SEND_MESSAGES))) {
     utils.safeReply(interaction, 'I need permission to send messages to do that here');

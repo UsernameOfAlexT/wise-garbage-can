@@ -1,10 +1,12 @@
-const ON = 'on';
-const OFF = 'off';
 const utils = require('../utils.js');
 const phraserobj = require('../datalists/statusphraseobjs.js');
 const phraser = require('../datalists/statusphraser.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageEmbed } = require('discord.js');
+const { InteractionReply } = require('../support/intereply.js');
+const { Formatters } = require('discord.js');
 const STATE_ARG = 'state';
+const RAND_TITLE_PARTS = 3;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,71 +21,74 @@ module.exports = {
   disallowDm: true,
   ownerOnly: true,
   execute(interaction) {
-    let targetState;
-    if (!args.length) {
-      utils.safeMention(
-        msg,
-        `\'${ON}\' or \'${OFF}\' not given. Assuming it is MOVIE TIME`
+    const state = interaction.options.getBoolean(STATE_ARG);
+
+    if (!(interaction.channel.type === 'GUILD_TEXT')) {
+      return utils.safeReply(interaction,
+        'This only works in ordinary text channels'
       );
-      targetState = ON;
-    } else {
-      targetState = args[0].toLowerCase();
     }
 
-    togglerMv(msg, targetState);
+    permissionsHandler(interaction, state);
   }
 }
 
-function togglerMv(msg, state) {
-  if (!(msg.channel.type === 'GUILD_TEXT')) {
-    return utils.safeReply(msg,
-      'This only works in ordinary text channels'
-    );
-  }
-
-  if (state === ON) {
-    permissionsHandler(msg.channel, true, msg.author);
-  } else if (state === OFF) {
-    utils.safeSend(
-      msg,
-      `@everyone \nMovie time is over, the channel has closed.\n${getRandomExtraStatus()}`,
-      () => { permissionsHandler(msg.channel, false, msg.author) },
-      true,
-      'I have no permission to send messages there. Movietime may already be off'
-    );
-  } else {
-    utils.safeMention(
-      msg,
-      `${state} is not something I recognize. Use \'${ON}\' or \'${OFF}\'.`
-    );
-  }
-}
-
-function permissionsHandler(channel, boolState, author) {
-  channel.permissionOverwrites.create(channel.guild.roles.everyone,
+function permissionsHandler(interaction, boolState) {
+  const targetChannel = interaction.channel;
+  targetChannel.permissionOverwrites.create(targetChannel.guild.roles.everyone,
     {
       ADD_REACTIONS: boolState,
       SEND_MESSAGES: boolState
     })
     .then(() => {
+      const embedAttachment = [getEmbed(boolState)];
       if (boolState) {
-        channel.send(
-          `@everyone \nMovie time has begun! `
-          + `The channel is open.\n${getRandomExtraStatus()}`
-        );
+        new InteractionReply(interaction)
+          .withReplyContent(Formatters.channelMention(targetChannel.id))
+          .withEmbedContent(embedAttachment)
+          .withHidden(false)
+          .replyTo();
+      } else {
+        new InteractionReply(interaction)
+          .withReplyContent(Formatters.channelMention(targetChannel.id))
+          .withEmbedContent(embedAttachment)
+          .withHidden(false)
+          .replyTo();
       }
     })
     .catch(() => {
-      utils.safeUserDm(author, 'I could not update that channel\'s permissions for everyone'
-        + '\n Make sure I have been granted the permission to manage channel permissions.');
+      const errmsg = 'I could not update that channel\'s permissions for everyone'
+        + '\n Make sure I have been granted the permission to manage channel permissions.';
+      new InteractionReply(interaction).withReplyContent(errmsg).replyTo();
     });
+}
+
+/**
+ * Return an embed representing the given information
+ */
+function getEmbed(permState) {
+  return new MessageEmbed()
+    .setColor(`${permState ? '#2E05FF' : '#948484'}`)
+    .setTitle(`Movietime ${permState ? 'has begun' : 'is over'}`)
+    .setDescription(`The channel ${permState ? 'is now open' : 'has closed'}`)
+    .addField('\u200b', '\u200b')
+    .addField(getRandomMsgTitle(), getRandomExtraStatus())
+    ;
 }
 
 /**
  * Return some randomly constructed phrase.
  * Just to add some fun into the announcements
  */
-function getRandomExtraStatus() {
+ function getRandomExtraStatus() {
   const wordcount = utils.withChance(80) ? 4 : 2;
   return phraserobj.chain(phraser.mvt_list, wordcount);
+}
+
+/**
+ * Return some randomly constructed title.
+ * Just to add some fun into the announcements
+ */
+function getRandomMsgTitle() {
+  return phraserobj.chain(phraser.mvt_title_extras, RAND_TITLE_PARTS);
 }

@@ -160,6 +160,25 @@ exports.mvt_list = [
   new Terminator("- The Best in Town"),
 ];
 
+exports.mvt_title_extras = [
+  new Leadin("Hey, listen!"),
+  new Leadin("Listen up, maggots!"),
+  new Leadin("WORDS!"),
+  new Leadin("Attention!"),
+  new Leadin("You can read, right?"),
+  new Leadin("It's a conspiracy."),
+  new Leadin("You idiots better be here."),
+  new Leadin("Dig the wax outta your ears and listen up!"),
+  new Subject("These are important messages"),
+  new Subject("There are words here"),
+  new Subject("Here, have some words"),
+  new Subject("Some very special messages"),
+  new Terminator("from some important people:"),
+  new Terminator("that amount to nothing:"),
+  new Terminator("on your picture-box:"),
+  new Terminator("stolen from my landlord:"),
+];
+
 exports.user_act_list = [
   new Leadin("Tales of"),
   new Leadin("Book of"),

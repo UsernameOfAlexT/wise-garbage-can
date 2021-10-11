@@ -17,70 +17,38 @@ module.exports = {
     )
     .addIntegerOption(option =>
       option.setName(AMT_ARG)
-        .setDescription('Optional number of emoji to return (default 3)')
+        .setDescription('Optional number of emoji to return (default 3, max 10)')
     )
   ,
   cd: 5,
   disallowDm: true,
-  needSendPerm: true,
+  needSendPerm: false,
   execute(interaction) {
-    if (!msg.channel.guild.available) { return; }
+    if (!interaction.guild.available) { return; }
 
     // .random() directly on the collection would also work 
     // but I want a mix of guild/unicode emoji
-    let emojicache = [...msg.channel.guild.emojis.cache.values()];
-    const targetEmojiNum = parseArgs(msg, args);
+    let emojicache = [...interaction.guild.emojis.cache.values()];
+    const targetEmojiNum = parseIntArg(interaction.options)
     const emojibody = mojibuilder(emojicache, mojiballconstructs.mojiball, targetEmojiNum);
 
-    // valid parsed arguments should be stripped at this point
-    const resStr = args.length
-      ? 'The Emojic 8 Ball answers \"' + args.join(' ') + '\" with:\n'
+    const question = interaction.options.getString(QUESTION_ARG);
+    const response = question
+      ? `The Emojic 8 ball answers "${question}" with:`
       : '';
-    msg.channel.send(resStr + emojibody)
-      .catch(() => {
-        utils.safeReply(msg, 'Something went wrong consulting the 8 ball')
-      });
+    utils.safeReply(interaction, response + emojibody, false);
   }
 }
 
-function parseArgs(msg, args) {
-  if (args.length === 1) {
-    return extractResult(
-      parseIntWithFeedback(msg.channel, args[0], false), args, 1);
-  }
-
-  // TODO similar logic to titheTime in tithe.js. Consider making common
-  if (args[1] && args[1] === '|') {
-    return extractResult(
-      parseIntWithFeedback(msg.channel, args[0], true), args, 2);
-  }
-  return DEFAULT_EMOJI_NO;
-}
-
-function extractResult(parseInfo, args, toRemove) {
-  if (parseInfo.successfulParse) {
-    // cut out the parsed args if successful
-    args.splice(0, toRemove);
-  }
-  return parseInfo.res;
-}
-
-function parseIntWithFeedback(channelToSend, toParse, giveParsingFeedback) {
-  let parsedInt = parseInt(toParse, 10);
-  // consider parsed 0 a fail 
-  const unsuccessfulParse = isNaN(parsedInt) || parsedInt < 1;
-  if (giveParsingFeedback && unsuccessfulParse) {
-    channelToSend.send(`${toParse} does not look like a valid number. Defaulting to ${DEFAULT_EMOJI_NO} emoji`);
-  }
-  // never suppress this feedback
-  if (!unsuccessfulParse && parsedInt > MAX_EMOJI_NO) {
-    channelToSend.send(`${parsedInt} exceeds the max of ${MAX_EMOJI_NO} emoji, so you are only getting that many`);
-    parsedInt = MAX_EMOJI_NO;
-  }
-  return {
-    res: unsuccessfulParse ? DEFAULT_EMOJI_NO : parsedInt,
-    successfulParse: !unsuccessfulParse
-  };
+/**
+ * Parse the options for a reasonable amount arg
+ * 
+ * @param {Options} options the interaction's options 
+ */
+function parseIntArg(options) {
+  let amtarg = options.getInteger(AMT_ARG);
+  if (!amtarg || amtarg < 1) { amtarg = DEFAULT_EMOJI_NO }
+  return amtarg > 10 ? MAX_EMOJI_NO : amtarg;
 }
 
 function mojibuilder(guildEmoji, unicodeEmojiChoices, emojiTarget) {
