@@ -42,19 +42,11 @@ function permissionsHandler(interaction, boolState) {
     })
     .then(() => {
       const embedAttachment = [getEmbed(boolState)];
-      if (boolState) {
-        new InteractionReply(interaction)
-          .withReplyContent(Formatters.channelMention(targetChannel.id))
-          .withEmbedContent(embedAttachment)
-          .withHidden(false)
-          .replyTo();
-      } else {
-        new InteractionReply(interaction)
-          .withReplyContent(Formatters.channelMention(targetChannel.id))
-          .withEmbedContent(embedAttachment)
-          .withHidden(false)
-          .replyTo();
-      }
+      new InteractionReply(interaction)
+        .withReplyContent(Formatters.channelMention(targetChannel.id))
+        .withEmbedContent(embedAttachment)
+        .withHidden(false)
+        .replyTo();
     })
     .catch(() => {
       const errmsg = 'I could not update that channel\'s permissions for everyone'
@@ -80,7 +72,7 @@ function getEmbed(permState) {
  * Return some randomly constructed phrase.
  * Just to add some fun into the announcements
  */
- function getRandomExtraStatus() {
+function getRandomExtraStatus() {
   const wordcount = utils.withChance(80) ? 4 : 2;
   return phraserobj.chain(phraser.mvt_list, wordcount);
 }

@@ -11,9 +11,14 @@ const utils = require('../utils.js');
 const envutils = require('../envutils.js');
 const fs = require('fs');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { InteractionReply } = require('../support/intereply.js');
 // NOTE: this seems to need to be relative to index, and not this module
 const REL_PATH_TO_SOUND_DIR = 'sound/';
-const TAG_SOUND_PREFIX = '-t';
+const TAG_ARG = 'tags';
+const NAME_ARG = 'name';
+const SUBCMD_NAME = 'vsfxnames';
+const SUBCMD_TAG = 'vsfxtags';
+const SUBCMD_PLAY = 'vsfxplay';
 
 /**
  * Static Audio files stored locally for now.
@@ -24,57 +29,87 @@ const TAG_SOUND_PREFIX = '-t';
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('vsfx')
-    .setDescription('Play some random sounds in the voice channel you are in. Very annoying!'),
-  name: 'vcsfx',
-  aliases: ['vsfx', 'vcfx', 'vx'],
+    .setDescription('Play some random sounds in the voice channel you are in. Very annoying!')
+    .addSubcommand(subcmd =>
+      subcmd.setName(SUBCMD_NAME)
+        .setDescription(`See a list of names for use with ${SUBCMD_PLAY}`)
+    )
+    .addSubcommand(subcmd =>
+      subcmd.setName(SUBCMD_TAG)
+        .setDescription(`See a list of tags for use with ${SUBCMD_PLAY}`)
+    )
+    .addSubcommand(subcmd =>
+      subcmd.setName(SUBCMD_PLAY)
+        .setDescription('Play some annoying sounds in your current voice channel')
+        .addStringOption(option =>
+          option.setName(TAG_ARG)
+            .setDescription(`Optional tag(s) to filter sounds by (use ${SUBCMD_TAG}).` +
+            ' Separate tags using \"|\"')
+        )
+        .addStringOption(option =>
+          option.setName(NAME_ARG)
+            .setDescription(`Exact name of sound to play (use ${SUBCMD_NAME}). ` +
+              'Takes priority over other options')
+        )
+    ),
   cd: 11,
-  desc: 'Play some random sounds in the voice channel you are in. Very annoying! '
-    + 'Use \'vcsfx tags\' to see tag options to filter. '
-    + 'Use \'vcsfx names\' to see names to use if getting an exact sound '
-    + '\nInclude \' ' + TAG_SOUND_PREFIX + ' \' to search by tags '
-    + 'for example:  \'vcsfx ' + TAG_SOUND_PREFIX + ' ready\''
-    + '\n(If getting exact sounds, only the first name given is considered)',
   disallowDm: false,
   needSendPerm: true,
   execute(interaction) {
     // handle various informational commands
-    const infomsg = handleInfoCommands(args);
-    if (infomsg.length) {
-      return msg.author.send(infomsg.join('\n'));
+    if (interaction.options.getSubcommand() === SUBCMD_TAG) {
+      msgToBuild = [];
+      vcsfxsupp.tagsToDesc.forEach((val, key) => {
+        msgToBuild.push(`Tag: ${key} | Description: ${val}`);
+      });
+      return new InteractionReply(interaction)
+        .withReplyContent(msgToBuild.join('\n'))
+        .replyTo();
+    } else if (interaction.options.getSubcommand() === SUBCMD_NAME) {
+      msgToBuild = [];
+      vcsfxsupp.sfxsupp.forEach((soundobj, commonname) => {
+        msgToBuild.push(`Sound Name: ${commonname} | Description: ${soundobj.desc}`);
+      });
+      return new InteractionReply(interaction)
+        .withReplyContent(msgToBuild.join('\n'))
+        .replyTo();
     }
 
     // perform various checks to make sure what we are about to try is valid
-    if (!msg.channel.guild) {
-      return msg.author.send(
-        `Only informational commands can be used outside of servers.` +
-        `\n Use the help command for more on this.`
-      );
+    if (!interaction.channel.guild) {
+      return new InteractionReply(interaction)
+        .withReplyContent('This cannot be used outside of servers')
+        .replyTo();
     }
 
-    if (!msg.channel.guild.available) { return; }
+    if (!interaction.channel.guild.available) { return; }
 
-    if (!msg.member.voice.channel) {
-      return utils.safeMention(msg,
-        'That\'s a totally non-existent voice channel you\'re in. ' +
-        'Join a real one and we\'ll talk.'
-      );
+    if (!interaction.member || !interaction.member.voice.channel) {
+      return new InteractionReply(interaction)
+        .withReplyContent('You have to be in a voice channel for this to work')
+        .replyTo();
     }
+
+    const tags = interaction.options.getString(TAG_ARG);
+    const name = interaction.options.getString(NAME_ARG);
 
     // decide what ought to be played
-    const fileToPlay = !args.length ? randomSfx() : specificSfx(args);
+    const fileToPlay = (tags || name) ? specificSfx(tags, name) : randomSfx();
 
     if (!fileToPlay) {
-      return utils.safeMention(msg,
-        `No matches. Use \'vcsfx tags\' or \'vcsfx names\'` +
-        `\nReminder: Include ${TAG_SOUND_PREFIX}` +
-        ` for searching by tag`
-      );
+      return new InteractionReply(interaction)
+        .withReplyContent(`No matches. Refer to ${SUBCMD_NAME} or ${SUBCMD_TAG}`)
+        .replyTo();
     }
 
+    new InteractionReply(interaction)
+        .withReplyContent(`Playing ${(tags || name) ? 'based on given' : 'randomly'}...`)
+        .replyTo();
+
     const connection = joinVoiceChannel({
-      channelId: msg.member.voice.channel.id,
-      guildId: msg.member.voice.channel.guild.id,
-      adapterCreator: msg.member.voice.channel.guild.voiceAdapterCreator
+      channelId: interaction.member.voice.channel.id,
+      guildId: interaction.member.voice.channel.guild.id,
+      adapterCreator: interaction.member.voice.channel.guild.voiceAdapterCreator
     });
 
     // TODO does this fail messily for non opus?
@@ -93,7 +128,9 @@ module.exports = {
       }
     });
     player.on('error', error => {
-      utils.safeMention(msg, 'We had some trouble playing that one. Try again later.');
+      new InteractionReply(interaction)
+        .withReplyContent('Ran into trouble playing that, try again later')
+        .replyTo();
       console.error(`Error while playing ${fileToPlay}: ${error}`);
       // this eventually falls naturally to the idle state
     });
@@ -114,39 +151,21 @@ module.exports = {
   }
 }
 
-function handleInfoCommands(args) {
-  const msgToBuild = [];
-  if (!args[0]) {
-    return msgToBuild;
-  }
-
-  if (args[0].toLowerCase() === 'tags') {
-    vcsfxsupp.tagsToDesc.forEach((val, key) => {
-      msgToBuild.push(`Tag: ${key} | Description: ${val}`);
-    });
-  }
-
-  if (args[0].toLowerCase() === 'names') {
-    vcsfxsupp.sfxsupp.forEach((soundobj, commonname) => {
-      msgToBuild.push(`Sound Name: ${commonname} | Description: ${soundobj.desc}`);
-    });
-  }
-
-  return msgToBuild;
-}
-
 function randomSfx() {
   return randomSfxFromList([...vcsfxsupp.sfxsupp.values()]);
 }
 
-function specificSfx(args) {
-  // there should be at least one arg in this case
-  return args.includes(TAG_SOUND_PREFIX)
-    ? sfxBasedOnTag(args.filter(tag => {
-      return vcsfxsupp.tagsToDesc.has(tag);
-    }))
-    : sfxBasedOnExactName(args[0])
-    ;
+function specificSfx(tags, name) {
+  let splittags = '';
+  if (tags) {
+    splittags = tags.split('|');
+  }
+  // at least one exists in this case
+  return name
+    ? sfxBasedOnExactName(name)
+    : sfxBasedOnTag(splittags.filter(tag => {
+      return vcsfxsupp.tagsToDesc.has(tag.trim());
+    }));
 }
 
 function sfxBasedOnExactName(name) {
@@ -158,7 +177,7 @@ function sfxBasedOnTag(taglist) {
   const sfxobjlist = [...vcsfxsupp.sfxsupp.values()];
   const matchingSfx = sfxobjlist.filter(sfxitem => {
     return sfxitem.tags.some(tag => {
-      return taglist.includes(tag);
+      return taglist.includes(tag.trim());
     });
   });
   return matchingSfx.length ? randomSfxFromList(matchingSfx) : undefined;

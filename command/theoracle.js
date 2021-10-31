@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { InteractionReply } = require('../support/intereply.js');
 const {oracle_defaults_array} = require('../defaultlists.json');
 const utils = require('../utils.js')
 const OPT_ARGS = 'options'
@@ -16,20 +17,24 @@ module.exports = {
   needSendPerm: true,
   execute(interaction) {
     let choices = oracle_defaults_array;
+    const args = interaction.options.getString(OPT_ARGS);
 
-    if (!args.length) {
-      msg.channel.send("The oracle shall use the list that has existed since time\'s dawn");
+    if (!args) {
+      new InteractionReply(interaction)
+        .withReplyContent("The oracle shall use the list that has existed since time\'s dawn")
+        .withHidden(false)
+        .replyTo();
     } else {
-      msg.channel.send("The oracle considers your query");
-      choices = args;
+      new InteractionReply(interaction)
+        .withReplyContent("The oracle considers your query")
+        .withHidden(false)
+        .replyTo();
+      choices = args.split('|');
     }
 
-    utils.safeReply(msg, "The ancient oracle speaks! \n" + oraclePicker(choices));
+    new InteractionReply(interaction)
+        .withReplyContent(`The ancient oracle speaks! \n${utils.pickRandomly(choices)}`)
+        .withHidden(false)
+        .replyTo();
   }
-}
-
-function oraclePicker(choices) {
-  let choseni = utils.randomInt(choices.length);
-  let subject = utils.pickSafely(choseni, choices);
-  return subject;
 }

@@ -1,6 +1,7 @@
 const mojiballconstructs = require('./emojieightballsupport/mojiballconstructs.js');
 const utils = require('../utils.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { InteractionReply } = require('../support/intereply.js');
 const DEFAULT_EMOJI_NO = 3;
 const MAX_EMOJI_NO = 10;
 const GUILD_SELECTION_CHANCE = 25;
@@ -17,7 +18,8 @@ module.exports = {
     )
     .addIntegerOption(option =>
       option.setName(AMT_ARG)
-        .setDescription('Optional number of emoji to return (default 3, max 10)')
+      .setDescription('Optional number of emoji to fetch' +
+      ` (default ${DEFAULT_EMOJI_NO}, max ${MAX_EMOJI_NO})`)
     )
   ,
   cd: 5,
@@ -36,7 +38,10 @@ module.exports = {
     const response = question
       ? `The Emojic 8 ball answers "${question}" with:`
       : '';
-    utils.safeReply(interaction, response + emojibody, false);
+    new InteractionReply(interaction)
+      .withReplyContent(response + emojibody)
+      .withHidden(false)
+      .replyTo();
   }
 }
 

@@ -1,5 +1,6 @@
 const utils = require('../utils.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { InteractionReply } = require('../support/intereply.js');
 const CMD_ARG = 'command';
 
 module.exports = {
@@ -22,13 +23,15 @@ module.exports = {
       msgToBuild.push(`\n \'/help [command name]\' will get you detailed info`);
       // This is unlikely to exceed 2000 characters, but if it does it will
       // need to be manually split to prevent truncation
-      return utils.safeReply(interaction, msgToBuild.join('\n'));
+      return new InteractionReply(interaction)
+        .withReplyContent(msgToBuild.join('\n')).replyTo();
     }
 
     const command = commands.get(cmdarg);
     if (!command) {
-      return utils.safeReply(interaction, 'That isn\'t anything I recognize.'
-        + '\nCome up with better fake names, are you even trying?');
+      return new InteractionReply(interaction)
+        .withReplyContent('That isn\'t anything I recognize.'
+          + '\nCome up with better fake names, are you even trying?').replyTo();
     }
 
     msgToBuild.push(` |- Command Name -| : ${command.data.name}`);
@@ -41,7 +44,8 @@ module.exports = {
     }
     msgToBuild.push(` |- Cooldown -| : ${command.cd || 3} second(s)`);
 
-    utils.safeReply(interaction, msgToBuild.join('\n'));
+    new InteractionReply(interaction)
+      .withReplyContent(msgToBuild.join('\n')).replyTo();
   }
 }
 
