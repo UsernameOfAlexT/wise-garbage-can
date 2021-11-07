@@ -33,8 +33,10 @@ exports.InteractionReply = class {
     return this;
   }
 
+  // TODO should there be an async version? should that be the only version?
   /**
-   * Finalize this reply
+   * Finalize this reply. Note that this does not wait for the completion
+   * of the reply - that will have to be done explicitly
    */
   replyTo() {
     const interaction = this.#baseInteraction;

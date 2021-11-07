@@ -12,6 +12,7 @@ const envutils = require('../envutils.js');
 const fs = require('fs');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { InteractionReply } = require('../support/intereply.js');
+const { MessageEmbed } = require('discord.js');
 // NOTE: this seems to need to be relative to index, and not this module
 const REL_PATH_TO_SOUND_DIR = 'sound/';
 const TAG_ARG = 'tags';
@@ -44,7 +45,7 @@ module.exports = {
         .addStringOption(option =>
           option.setName(TAG_ARG)
             .setDescription(`Optional tag(s) to filter sounds by (use ${SUBCMD_TAG}).` +
-            ' Separate tags using \"|\"')
+              ' Separate tags using \"|\"')
         )
         .addStringOption(option =>
           option.setName(NAME_ARG)
@@ -58,20 +59,22 @@ module.exports = {
   execute(interaction) {
     // handle various informational commands
     if (interaction.options.getSubcommand() === SUBCMD_TAG) {
-      msgToBuild = [];
+      let tagsMap = new Map();
       vcsfxsupp.tagsToDesc.forEach((val, key) => {
-        msgToBuild.push(`Tag: ${key} | Description: ${val}`);
+        tagsMap.set(`Tag: ${key}`, `${val}`);
       });
       return new InteractionReply(interaction)
-        .withReplyContent(msgToBuild.join('\n'))
+        .withEmbedContent([getInfoEmbed("Tags", tagsMap)])
+        .withReplyContent(`Valid Tags for use with ${SUBCMD_PLAY}`)
         .replyTo();
     } else if (interaction.options.getSubcommand() === SUBCMD_NAME) {
-      msgToBuild = [];
+      let namesMap = new Map();
       vcsfxsupp.sfxsupp.forEach((soundobj, commonname) => {
-        msgToBuild.push(`Sound Name: ${commonname} | Description: ${soundobj.desc}`);
+        namesMap.set(`Sound Name: ${commonname}`, `${soundobj.desc}`);
       });
       return new InteractionReply(interaction)
-        .withReplyContent(msgToBuild.join('\n'))
+        .withEmbedContent([getInfoEmbed("Names", namesMap)])
+        .withReplyContent(`Valid Names for use with ${SUBCMD_PLAY}`)
         .replyTo();
     }
 
@@ -103,52 +106,65 @@ module.exports = {
     }
 
     new InteractionReply(interaction)
-        .withReplyContent(`Playing ${(tags || name) ? 'based on given' : 'randomly'}...`)
-        .replyTo();
-
-    const connection = joinVoiceChannel({
-      channelId: interaction.member.voice.channel.id,
-      guildId: interaction.member.voice.channel.guild.id,
-      adapterCreator: interaction.member.voice.channel.guild.voiceAdapterCreator
-    });
-
-    // TODO does this fail messily for non opus?
-    let resource = createAudioResource(fs.createReadStream(fileToPlay), {
-      inputType: StreamType.OggOpus
-    });
-
-    const player = createAudioPlayer();
-    player.play(resource);
-    connection.subscribe(player);
-
-    // Various logging and error event handlers
-    player.on(AudioPlayerStatus.Playing, () => {
-      if (envutils.useDetailedLogging()) {
-        console.log(`I should be playing ${fileToPlay} now`);
-      }
-    });
-    player.on('error', error => {
-      new InteractionReply(interaction)
-        .withReplyContent('Ran into trouble playing that, try again later')
-        .replyTo();
-      console.error(`Error while playing ${fileToPlay}: ${error}`);
-      // this eventually falls naturally to the idle state
-    });
-    player.on(AudioPlayerStatus.Idle, () => {
-      if (envutils.useDetailedLogging()) {
-        console.log(`${fileToPlay} should no longer be playing`);
-      }
-      player.stop();
-      connection.destroy();
-    });
-
-    // logging events etc. for the connection itself
-    connection.on(VoiceConnectionStatus.Destroyed, () => {
-      if (envutils.useDetailedLogging()) {
-        console.log(`Voice connection has been destroyed`);
-      }
-    });
+      .withThen(() => playOverVoice(interaction, fileToPlay))
+      .withReplyContent(`Playing ${(tags || name) ? 'based on given' : 'randomly'}...`)
+      .replyTo();
   }
+}
+
+function playOverVoice(interaction, fileToPlay) {
+  const connection = joinVoiceChannel({
+    channelId: interaction.member.voice.channel.id,
+    guildId: interaction.member.voice.channel.guild.id,
+    adapterCreator: interaction.member.voice.channel.guild.voiceAdapterCreator
+  });
+
+  // TODO does this fail messily for non opus?
+  let resource = createAudioResource(fs.createReadStream(fileToPlay), {
+    inputType: StreamType.OggOpus
+  });
+
+  const player = createAudioPlayer();
+  player.play(resource);
+  connection.subscribe(player);
+
+  // Various logging and error event handlers
+  player.on(AudioPlayerStatus.Playing, () => {
+    if (envutils.useDetailedLogging()) {
+      console.log(`I should be playing ${fileToPlay} now`);
+    }
+  });
+  player.on('error', error => {
+    new InteractionReply(interaction)
+      .withReplyContent('Ran into trouble playing that, try again later')
+      .replyTo();
+    console.error(`Error while playing ${fileToPlay}: ${error}`);
+    // this eventually falls naturally to the idle state
+  });
+  player.on(AudioPlayerStatus.Idle, () => {
+    if (envutils.useDetailedLogging()) {
+      console.log(`${fileToPlay} should no longer be playing`);
+    }
+    player.stop();
+    connection.destroy();
+  });
+
+  // logging events etc. for the connection itself
+  connection.on(VoiceConnectionStatus.Destroyed, () => {
+    if (envutils.useDetailedLogging()) {
+      console.log(`Voice connection has been destroyed`);
+    }
+  });
+}
+
+/**
+ * Get an embed representing the given information in the array
+ */
+function getInfoEmbed(embedTitle, contentsArray) {
+  let embed = new MessageEmbed().setTitle(embedTitle);
+
+  contentsArray.forEach((v, k) => embed.addField(k, v));
+  return embed;
 }
 
 function randomSfx() {

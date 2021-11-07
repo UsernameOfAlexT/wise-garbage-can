@@ -1,10 +1,14 @@
 const utils = require('../utils.js');
 const phraserobj = require('../datalists/statusphraseobjs.js');
 const phraser = require('../datalists/statusphraser.js');
+const { first_names, last_names } = require('../datalists/rngparty.json');
+const { status, origins } = require('../datalists/rngpartybackground.json');
+const { opening, closing } = require('../datalists/movietimephrase.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed } = require('discord.js');
 const { InteractionReply } = require('../support/intereply.js');
 const { Formatters } = require('discord.js');
+
 const STATE_ARG = 'state';
 const RAND_TITLE_PARTS = 3;
 
@@ -24,9 +28,9 @@ module.exports = {
     const state = interaction.options.getBoolean(STATE_ARG);
 
     if (!(interaction.channel.type === 'GUILD_TEXT')) {
-      return utils.safeReply(interaction,
-        'This only works in ordinary text channels'
-      );
+      return new InteractionReply(interaction)
+        .withReplyContent('This must be used from a standard text channel')
+        .replyTo();
     }
 
     permissionsHandler(interaction, state);
@@ -59,12 +63,17 @@ function permissionsHandler(interaction, boolState) {
  * Return an embed representing the given information
  */
 function getEmbed(permState) {
+  const randFooter = `${utils.pickRandomly(first_names)} ${utils.pickRandomly(last_names)}, `
+    + `${utils.pickRandomly(status)} ${utils.pickRandomly(origins)}`;
+  const title = permState ? utils.pickRandomly(opening) : utils.pickRandomly(closing);
+  
   return new MessageEmbed()
     .setColor(`${permState ? '#2E05FF' : '#948484'}`)
-    .setTitle(`Movietime ${permState ? 'has begun' : 'is over'}`)
+    .setTitle(Formatters.underscore(title))
     .setDescription(`The channel ${permState ? 'is now open' : 'has closed'}`)
     .addField('\u200b', '\u200b')
     .addField(getRandomMsgTitle(), getRandomExtraStatus())
+    .setFooter(`The person of the interval is: ${randFooter}`)
     ;
 }
 

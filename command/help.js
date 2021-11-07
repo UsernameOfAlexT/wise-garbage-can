@@ -1,5 +1,5 @@
-const utils = require('../utils.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageEmbed } = require('discord.js');
 const { InteractionReply } = require('../support/intereply.js');
 const CMD_ARG = 'command';
 
@@ -34,31 +34,42 @@ module.exports = {
           + '\nCome up with better fake names, are you even trying?').replyTo();
     }
 
-    msgToBuild.push(` |- Command Name -| : ${command.data.name}`);
+    let commandInfo = new Map();
     if (command.data.description) {
-      msgToBuild.push(` |- Command Description -| : ${command.data.description}`);
+      commandInfo.set(`Command Description`, `${command.data.description}`);
     }
     if (command.data.options && command.data.options.length) {
-      msgToBuild.push(` |- Command Options -| : `);
-      addOptionsData(msgToBuild, command.data.options);
+      addOptionsData(commandInfo, command.data.options);
     }
-    msgToBuild.push(` |- Cooldown -| : ${command.cd || 3} second(s)`);
+    commandInfo.set(`Cooldown`, `${command.cd || 3} second(s)`);
 
     new InteractionReply(interaction)
-      .withReplyContent(msgToBuild.join('\n')).replyTo();
+      .withEmbedContent([getInfoEmbed(`Help - ${command.data.name}`, commandInfo)])
+      .withReplyContent(`${command.data.name}:`)
+      .replyTo();
   }
 }
 
 /**
- * Append the options to the given string array in a readable way
+ * Get an embed representing the given information in the map
+ */
+ function getInfoEmbed(embedTitle, cmdmap) {
+  let embed = new MessageEmbed().setTitle(embedTitle);
+
+  cmdmap.forEach((v, k) => embed.addField(k, v));
+  return embed;
+}
+
+/**
+ * Break down the options given and add them to the map in a readable way
  * 
- * @param {String[]} msgToBuild 
+ * @param {Map} msgToBuild 
  * @param {ToAPIApplicationCommandOptions} options 
  */
-function addOptionsData(msgToBuild, options) {
+function addOptionsData(cmd, options) {
   options.forEach(option => {
     // guard against this just in case
     if (option.name && option.description)
-      msgToBuild.push(` * ${option.name}: ${option.description}`);
+      cmd.set(` Option: ${option.name}`, ` ${option.description}`);
   });
 }

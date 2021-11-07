@@ -35,42 +35,52 @@ module.exports = {
     let pageSizeParsed = parseNumberArg(interaction.options, premsgToBuild);
 
     new InteractionReply(interaction)
+      .withThen(() => fetchCards(interaction, pageSizeParsed))
       .withReplyContent(premsgToBuild.join('\n')).replyTo();
-    /** 
+  }
+}
+
+/**
+ * Fetch cards, format them in a readable way, then followup the reply with it
+ * 
+ * @param {Discord.Interaction} interaction interaction to use for replies/followups
+ * @param {Number} pageSizeParsed Number of cards to query for
+ */
+function fetchCards(interaction, pageSizeParsed) {
+  /** 
      * note: I would like to use contains to filter out image-less results but it
      *  doesn't seem to behave when used with random
     */
-    mtg.card.where({
-      page: 1,
-      pageSize: pageSizeParsed,
-      random: true,
-      layout: RELEVANT_LAYOUTS,
+  mtg.card.where({
+    page: 1,
+    pageSize: pageSizeParsed,
+    random: true,
+    layout: RELEVANT_LAYOUTS,
+  })
+    .then(cards => {
+      if (!cards.length) {
+        console.error('No cards were returned by the query');
+        return new InteractionReply(interaction)
+          .withReplyContent('Something strange happened. Try again later').replyTo();
+      }
+
+      let embeds = [];
+      for (const card of cards) {
+        addCardInfo(embeds, card);
+      }
+
+      new InteractionReply(interaction)
+        .withReplyContent(`Behold the glory of ${pageSizeParsed} randomly chosen card(s)`)
+        .withEmbedContent(embeds)
+        .withHidden(false)
+        .replyTo();
     })
-      .then(cards => {
-        if (!cards.length) {
-          console.error('No cards were returned by the query');
-          return new InteractionReply(interaction)
-            .withReplyContent('Something strange happened. Try again later').replyTo();
-        }
-
-        embeds = [];
-        for (const card of cards) {
-          addCardInfo(embeds, card);
-        }
-
-        new InteractionReply(interaction)
-          .withReplyContent(`Behold the glory of ${pageSizeParsed} randomly chosen card(s)`)
-          .withEmbedContent(embeds)
-          .withHidden(false)
-          .replyTo();
-      })
-      .catch(err => {
-        new InteractionReply(interaction)
-          .withReplyContent('Seems like something went wrong while getting cards. Try again later')
-          .replyTo();
-        console.error(`Something went wrong while using the mtg api. \n`, err);
-      });
-  }
+    .catch(err => {
+      new InteractionReply(interaction)
+        .withReplyContent('Seems like something went wrong while getting cards. Try again later')
+        .replyTo();
+      console.error(`Something went wrong while using the mtg api. \n`, err);
+    });
 }
 
 function addCardInfo(embedArr, card) {
