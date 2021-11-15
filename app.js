@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const { Client, Intents, Collection, Permissions } = require('discord.js');
+const { InteractionReply } = require('./support/intereply.js');
 const envutils = require('./envutils.js');
 const utils = require('./utils.js');
 const phraserobj = require('./datalists/statusphraseobjs.js');
@@ -47,10 +48,17 @@ client.on('interactionCreate', interaction => {
   const { commandName } = interaction;
   const command = client.commands.get(commandName)
 
+  // most cmds expect a calling channel for the interaction, so guard against that
+  if (!interaction.channel) {
+    return new InteractionReply(interaction)
+      .withReplyContent("Commands can\'t be executed from this channel right now")
+      .replyTo();
+  }
+
   // guard dm interactions if not allowed
-  const invokedFromDm = interaction.channel && interaction.channel.type === 'DM';
   // interactions without channels are usually due to uncached dm channels
-  if (command.disallowDm && (invokedFromDm || !interaction.channel)) {
+  const invokedFromDm = interaction.channel.type === 'DM';
+  if (command.disallowDm && invokedFromDm) {
     return utils.safeReply(interaction, `${commandName}, you can\'t use that here`);
   }
 
