@@ -74,6 +74,33 @@ exports.safeReply = function (message, reply) {
 }
 
 /**
+ * Attempts to reply to the given interaction if not already replied.
+ * <BR> Posts a followup if it has already been replied to
+ * 
+ * @param {Discord.Interaction} interaction interaction to attempt to reply to
+ * @param {String} reply the reply content
+ * @param {Boolean} ephemeral ephemerality of the reply
+ * @param {Function} thenable function to run after a successful reply
+ */
+// TODO this has become unmaintainable. Switch to the builder method
+exports.safeReply = function (interaction, reply, ephemeral = true, thenable = () => { }) {
+  if (interaction.replied) {
+    interaction.followUp({ content: reply, ephemeral: ephemeral })
+      .then(thenable)
+      .catch(err => {
+        console.log(`Could not followup to interaction due to: ${err}`);
+      });
+    return;
+  }
+
+  interaction.reply({ content: reply, ephemeral: ephemeral })
+    .then(thenable)
+    .catch(err => {
+      console.log(`Could not reply to interaction due to: ${err}`);
+    });
+}
+
+/**
  * Replicates the legacy reply behaviour of tagging the user in a mention with
  * some added checks
  * 

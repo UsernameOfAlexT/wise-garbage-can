@@ -1,57 +1,75 @@
-const prefix = process.env.CMD_PREFIX;
-const utils = require('../utils.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageEmbed } = require('discord.js');
+const { InteractionReply } = require('../support/intereply.js');
+const CMD_ARG = 'command';
 
 module.exports = {
-  name: 'help',
-  aliases: ['h', 'man'],
+  data: new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('Get some quick info on offered commands')
+    .addStringOption(option =>
+      option.setName(CMD_ARG)
+        .setDescription('Optional name of command to get info on')),
   cd: 5,
-  desc: 'You already are using this thing. Quit asking',
   disallowDm: false,
-  needSendPerm: true,
-  cleanupRequest: true,
-  usage: '[command name]',
-  execute(msg, args) {
+  needSendPerm: false,
+  execute(interaction) {
     const msgToBuild = [];
-    const { commands } = msg.client;
-    if (!args.length) {
+    const { commands } = interaction.client;
+    const cmdarg = interaction.options.getString(CMD_ARG);
+    if (!cmdarg) {
       msgToBuild.push('These are my commands:');
-      msgToBuild.push(commands.map(command => command.name).join(', '));
-      msgToBuild.push(`\n \'${prefix}help [command name]\' will get you detailed info`);
+      msgToBuild.push(commands.map(command => command.data.name).join(', '));
+      msgToBuild.push(`\n \'/help [command name]\' will get you detailed info`);
       // This is unlikely to exceed 2000 characters, but if it does it will
       // need to be manually split to prevent truncation
-      msg.author.send(msgToBuild.join('\n'))
-        .then(() => {
-          if (!(msg.channel.type === 'DM')) {
-            utils.safeMention(msg, 'Check your DMs for my commands');
-          }
-        })
-        .catch(err => {
-          console.error(`${msg.author.tag} failed to DM with help info. \n`, err);
-          utils.safeMention(msg, 'I was going to DM you with my commands, but I couldn\'t');
-        })
-    } else {
-      const cmdName = args[0].toLowerCase();
-      const command = commands.get(cmdName)
-        || commands.find(cmd => cmd.aliases && cmd.aliases.includes(cmdName));
-
-      if(!command) {
-        return utils.safeMention(msg, 'That isn\'t anything I recognize.'
-         + '\nCome up with better fake names, are you even trying?');
-      }
-
-      msgToBuild.push(` |- Command Name -| : ${command.name}`);
-      if (command.aliases) {
-        msgToBuild.push(`|- Aliases -| : ${command.aliases.join(', ')}`);
-      }
-      if (command.desc) {
-        msgToBuild.push(` |- Command Description -| : ${command.desc}`);
-      }
-      if (command.usage) {
-        msgToBuild.push(` |- Command Usage -| : ${prefix}${command.name} ${command.usage}`);
-      }
-      msgToBuild.push(` |- Cooldown -| : ${command.cd || 3} second(s)`);
-
-      msg.channel.send(msgToBuild.join('\n'));
+      return new InteractionReply(interaction)
+        .withReplyContent(msgToBuild.join('\n')).replyTo();
     }
+
+    const command = commands.get(cmdarg);
+    if (!command) {
+      return new InteractionReply(interaction)
+        .withReplyContent('That isn\'t anything I recognize.'
+          + '\nCome up with better fake names, are you even trying?').replyTo();
+    }
+
+    let commandInfo = new Map();
+    if (command.data.description) {
+      commandInfo.set(`Command Description`, `${command.data.description}`);
+    }
+    if (command.data.options && command.data.options.length) {
+      addOptionsData(commandInfo, command.data.options);
+    }
+    commandInfo.set(`Cooldown`, `${command.cd || 3} second(s)`);
+
+    new InteractionReply(interaction)
+      .withEmbedContent([getInfoEmbed(`Help - ${command.data.name}`, commandInfo)])
+      .withReplyContent(`${command.data.name}:`)
+      .replyTo();
   }
+}
+
+/**
+ * Get an embed representing the given information in the map
+ */
+ function getInfoEmbed(embedTitle, cmdmap) {
+  let embed = new MessageEmbed().setTitle(embedTitle);
+
+  cmdmap.forEach((v, k) => embed.addField(k, v));
+  return embed;
+}
+
+/**
+ * Break down the options given and add them to the map in a readable way
+ * 
+ * @param {Map} msgToBuild 
+ * @param {ToAPIApplicationCommandOptions} options 
+ */
+function addOptionsData(cmd, options) {
+  options.forEach(option => {
+    // guard against this just in case
+    if (option.name && option.description)
+      cmd.set(` Option: ${option.name}`, ` ${option.description}`);
+  });
 }
