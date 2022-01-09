@@ -1,11 +1,11 @@
-const mtg = require('mtgsdk');
+const mtg = require('../support/mtgapicust.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { InteractionReply } = require('../support/intereply.js');
 const { MessageEmbed } = require('discord.js');
 const MAX_CARD_PAGESIZE = 10;
 const DEFAULT_CARD_PAGESIZE = 1;
 // try to exclude very exotic layouts as they display poorly
-const RELEVANT_LAYOUTS = "normal|split|flip|double-faced|aftermath";
+const RELEVANT_LAYOUTS = "normal|split|flip|transform|aftermath";
 const CARDNO_ARG = 'number';
 /** 
  * Using magicthegathering.io's api endpoints.
@@ -51,7 +51,7 @@ function fetchCards(interaction, pageSizeParsed) {
      * note: I would like to use contains to filter out image-less results but it
      *  doesn't seem to behave when used with random
     */
-  mtg.card.where({
+  mtg.getCards.where({
     page: 1,
     pageSize: pageSizeParsed,
     random: true,
@@ -84,9 +84,10 @@ function fetchCards(interaction, pageSizeParsed) {
 }
 
 function addCardInfo(embedArr, card) {
-  const cardName = card.name || "An Unknown Card";
-  const cardSet = card.setName || "An Unknown Set";
-  const cardText = card.text || "Oh, I couldn't find that either. This must be a nonstandard card."
+  const { 
+    name: cardName = "Unknown Name",
+    setName: cardSet = "Unknown Set",
+    text: cardText = "No Text Found" } = card;
 
   const cardInfo = new MessageEmbed()
     .setTitle(cardName)
