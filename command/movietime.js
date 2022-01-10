@@ -1,13 +1,12 @@
-const utils = require('../utils.js');
+const { pickRandomly: randomly, withChance } = require('../utils.js');
 const phraserobj = require('../datalists/statusphraseobjs.js');
 const phraser = require('../datalists/statusphraser.js');
 const { first_names, last_names } = require('../datalists/rngparty.json');
 const { status, origins } = require('../datalists/rngpartybackground.json');
-const { opening, closing } = require('../datalists/movietimephrase.json');
+const { opening, closing, imgUrls } = require('../datalists/movietimephrase.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, Formatters } = require('discord.js');
 const { InteractionReply } = require('../support/intereply.js');
-const { Formatters } = require('discord.js');
 
 const STATE_ARG = 'state';
 const RAND_TITLE_PARTS = 3;
@@ -63,9 +62,9 @@ function permissionsHandler(interaction, boolState) {
  * Return an embed representing the given information
  */
 function getEmbed(permState) {
-  const randFooter = `${utils.pickRandomly(first_names)} ${utils.pickRandomly(last_names)}, `
-    + `${utils.pickRandomly(status)} ${utils.pickRandomly(origins)}`;
-  const title = permState ? utils.pickRandomly(opening) : utils.pickRandomly(closing);
+  const randFooter = `${randomly(first_names)} ${randomly(last_names)}, `
+    + `${randomly(status)} ${randomly(origins)}`;
+  const title = permState ? randomly(opening) : randomly(closing);
   
   return new MessageEmbed()
     .setColor(`${permState ? '#2E05FF' : '#948484'}`)
@@ -73,6 +72,8 @@ function getEmbed(permState) {
     .setDescription(`The channel ${permState ? 'is now open' : 'has closed'}`)
     .addField('\u200b', '\u200b')
     .addField(getRandomMsgTitle(), getRandomExtraStatus())
+    .addField(`The mood of the ${permState ? "viewing" : "remaining interval"} is:`, '\u200b')
+    .setImage(randomly(imgUrls))
     .setFooter(`The person of the interval is: ${randFooter}`)
     ;
 }
@@ -82,7 +83,7 @@ function getEmbed(permState) {
  * Just to add some fun into the announcements
  */
 function getRandomExtraStatus() {
-  const wordcount = utils.withChance(80) ? 4 : 2;
+  const wordcount = withChance(80) ? 4 : 2;
   return phraserobj.chain(phraser.mvt_list, wordcount);
 }
 
