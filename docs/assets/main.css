@@ -1,7 +1,10 @@
 body {
   margin: 0;
-  font-size: calc(10px + 1vmin);
-  background-color: bisque;
+  display: grid;
+  min-height: 100%;
+  grid-template-rows: 100px auto 1fr;
+  font-size: 18px;
+  background-color: rgb(99, 96, 94);
   text-align: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
   'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -12,33 +15,67 @@ body {
 
 .site-header { 
   padding: 5px;
-  border-top: 5px solid #424242;
-  border-bottom: 1px solid #e8e8e8;
   background-color: rgb(205, 196, 255);
   font-size: calc(24px + 1vmin);
-  min-height: 55.95px;
+  min-height: 56px;
   width: 100%;
+}
+
+.page-content {
+  display: grid;
+  gap: calc(2px + 1vh)
 }
 
 .site-footer { 
   padding: 6px;
   text-align: start;
   border-bottom: 5px solid #424242;
-  width: 100%;
+  background-color: rgb(122, 117, 153);
 }
 
 .footer-heading {
   border-bottom: 1px solid #424242;
 }
 
+.codedoc-wrap {
+  list-style: none;
+}
+
+.codedoc-wrap li {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.codedoc-wrap li span {
+  font-size: 20px;
+  padding: 2px;
+  background-color: rgb(160, 203, 216);
+  border-bottom: 6px inset #155872;
+}
+
 .contact-list {
   list-style: none;
 }
 
+.main-content {
+  padding: 0.5rem;
+  background-color: rgb(166, 160, 216);
+  border-bottom: 6px inset #151672;
+}
+
 .wrapper {
+  display: flex;
   padding: 2px;
-  margin: calc(5px + 0.5vmin);
-  background-color: rgb(184, 170, 153);
-  border-top: 2px solid #6d6464;
-  border-bottom: 2px solid #6d6464;
+  margin: 5px;
+}
+
+.wrapper h3 {
+  flex: 1;
+  align-self: flex-start;
+}
+
+.wrapper .text-content-wrapper {
+  flex: 4;
+  text-align: start;
 }

@@ -15,9 +15,118 @@
 
   <main class="page-content" aria-label="Content">
     <div class="wrapper">
-      <p>A very basic site for holding documentation and resources related to my bot:
-        <a href="https://github.com/UsernameOfAlexT/wise-garbage-can">wise-garbage-can</a>
-      </p>
+      <div class="text-content-wrapper main-content">
+        <p>A very basic site for holding documentation and resources related to my bot:
+          <a href="https://github.com/UsernameOfAlexT/wise-garbage-can">wise-garbage-can</a>
+        </p>
+        <p>This documentation is also available in the
+          <a href="https://github.com/UsernameOfAlexT/wise-garbage-can#readme">README.md</a>
+          file included in the repo.
+        </p>
+      </div>
+    </div>
+    <div class="wrapper">
+      <h3 class="main-content">Getting it Running</h3>
+      <div class="text-content-wrapper main-content">
+        <p>The setup assumes that it is working with Heroku, though it shouldn't be difficult to get it to work locally
+          on
+          its own.</p>
+        <p>
+          A couple of extra pieces of information need to be provided in order for the bot to work properly.
+          This would be a .env file if running with Heroku, or some config file otherwise. No .env file is included here
+          for obvious security reasons.
+        </p>
+      </div>
+    </div>
+    <div class="wrapper">
+      <h3 class="main-content">Environment Variables in more detail</h3>
+      <div class="text-content-wrapper main-content">
+        <p>
+          If running using Heroku, then there just needs to be an .env file added in the same directory as app.js with
+          the
+          following information.
+          If running without heroku the app will have to be changed to fetch this information from a config file
+          instead of expecting them to be set as env variables.
+        </p>
+      </div>
+    </div>
+    <div class="wrapper">
+      <h3 class="main-content">Environment/config variables</h3>
+      <ul class="codedoc-wrap text-content-wrapper main-content">
+        <li>
+          <span class="env-title"> BOT_TOKEN="token-used-to-login-here"</span>
+          <p>
+            the token to authenticate with. Can be obtained from the developer portal page for a bot application you
+            created under "token"
+          </p>
+        </li>
+        <li>
+          <span class="env-title">CLIENT_ID="your-application-id-here"</span>
+          <p>
+            the client id that is used when registering slash commands globally.
+            Can also be obtained from the discord developer portal page for an application under "application id"
+          </p>
+        </li>
+        <li>
+          <span class="env-title"> GUILD_ID="your-guild-id-here"</span>
+          <p>
+            guild id used when registering slash commands for a single server.
+            For testing locally: slash commands will update immediately when registered to a single guild,
+            unlike global registration where changes can take time to fan out.
+            If this is set, then CLIENT_ID is ignored and commands will not be set globally.
+            Can be obtained by right clicking a server in discord while in developer mode > copy id
+          </p>
+        </li>
+        <li>
+          <span class="env-title">LOGGING_LEVEL=['verbose'|'standard']</span>
+          <p>
+            verbose has detailed debug logging, standard only logs severe errors
+          </p>
+        </li>
+        <li>
+          <span class="env-title">CMD_PREFIX="!" {or any other desired command prefix}</span>
+          <p>
+            No longer used as of the discord v13 update. 
+            The existence of the officially supported slash command method of interacting
+            with bots means that it is no longer necessary to have a prefix to indicate bot interactions
+          </p>
+        </li>
+      </ul>
+    </div>
+    <div class="wrapper">
+      <h3 class="main-content">Running locally</h3>
+      <div class="text-content-wrapper main-content">
+        <p>
+          After installing the Heroku CLI and installing dependencies via npm install:
+          heroku local. When running in a new server locally it may also be necessary to run heroku release in order to
+          register slash commands so that
+          they will actually appear when '/' is typed.
+        </p>
+        <p>
+          It is not necessary to register slash commands every time the app is brought up - only
+          if changes have been made to available slash commands or the bot has been added to a new server for local
+          testing.
+          On Heroku the commands are re-registered globally every time there is a new build.
+        </p>
+      </div>
+    </div>
+    <div class="wrapper">
+      <h3 class="main-content">Running locally with a config file</h3>
+      <div class="text-content-wrapper main-content">
+        <p> If running using a config file without Heroku: npm start</p>
+        <p>
+          node cmdregist.js is the equivalent in this case to heroku release and is in fact what release does under the
+          hood anyway.
+        </p>
+      </div>
+    </div>
+    <div class="wrapper">
+      <h3 class="main-content">Unit Tests</h3>
+      <div class="text-content-wrapper main-content">
+        <p>
+          There are some basic unit tests using mocha that can be run using npm test.
+        </p>
+      </div>
     </div>
   </main>
 
