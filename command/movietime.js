@@ -3,7 +3,7 @@ const phraserobj = require('../datalists/statusphraseobjs.js');
 const phraser = require('../datalists/statusphraser.js');
 const { first_names, last_names } = require('../datalists/rngparty.json');
 const { status, origins } = require('../datalists/rngpartybackground.json');
-const { opening, closing, imgUrls } = require('../datalists/movietimephrase.json');
+const { opening, closing, imgUrls, openingComment, closingComment } = require('../datalists/movietimephrase.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed, Formatters } = require('discord.js');
 const { InteractionReply } = require('../support/intereply.js');
@@ -69,7 +69,7 @@ function getEmbed(permState) {
   return new MessageEmbed()
     .setColor(`${permState ? '#2E05FF' : '#948484'}`)
     .setTitle(Formatters.underscore(title))
-    .setDescription(`The channel ${permState ? 'is now open' : 'has closed'}`)
+    .setDescription(permState ? randomly(openingComment) : randomly(closingComment))
     .addField('\u200b', '\u200b')
     .addField(getRandomMsgTitle(), getRandomExtraStatus())
     .addField(`The mood of the ${permState ? "viewing" : "remaining interval"} is:`, '\u200b')

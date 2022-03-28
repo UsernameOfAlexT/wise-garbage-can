@@ -61,6 +61,22 @@
     "Leave now. You were never here. We never met.",
     "Agh, No Mither. Just can't be arsed"
   ],
+  "openingComment": [
+    "The channel is now open",
+    "This grave opens to welcome you",
+    "This channel regains its corporeal form",
+    "Follow me into this channel. Do not look behind you. Everything is normal.",
+    "There is no need to be upset. Bring your brain into this channel and relax.",
+    "From nothing comes something"
+  ],
+  "closingComment": [
+    "The channel has closed",
+    "The witching hour is upon us. Leave this place",
+    "The living cannot dwell here any longer. Begone!",
+    "This channel has been reclaimed by forces unknown",
+    "There is no channel",
+    "The channel vanished without a trace"
+  ],
   "imgUrls": [
     "https://usernameofalext.github.io/wise-garbage-can/assets/img/tooseventies.gif",
     "https://usernameofalext.github.io/wise-garbage-can/assets/img/infinite-rage.gif",
@@ -78,6 +94,10 @@
     "https://cdn.discordapp.com/attachments/400388801261731862/941391318217785494/9b0.gif",
     "https://cdn.discordapp.com/attachments/400388801261731862/941391317844500480/kusakabe_sakura_bokusatsu_tenshi_dokuro_chan__d8ab0f5ff3b7955382f157b3c5f720b0.gif",
     "https://cdn.discordapp.com/attachments/400388801261731862/941391317513170944/1492399552218.gif",
-    "https://cdn.discordapp.com/attachments/400388801261731862/941391317190184980/ohwell.png"
+    "https://cdn.discordapp.com/attachments/400388801261731862/941391317190184980/ohwell.png",
+    "https://cdn.discordapp.com/attachments/929916828770246716/957791650715947058/d82.gif",
+    "https://cdn.discordapp.com/attachments/840723318759882753/840726580543619103/clapclapclap.gif",
+    "https://cdn.discordapp.com/attachments/929916828770246716/957793470913855508/alwayrember.png",
+    "https://cdn.discordapp.com/attachments/929916828770246716/957793471316504576/horsesushi.png"
   ]
 }
