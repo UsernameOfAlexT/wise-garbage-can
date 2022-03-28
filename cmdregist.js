@@ -23,15 +23,16 @@ if (envutils.getCmdUpdateGuildId()) {
   console.log("Updating guild slash commands");
   apiroute = Routes.applicationGuildCommands(client_id, envutils.getCmdUpdateGuildId());
 } else {
-  console.log("Updating global slash commands")
+  console.log("Updating global slash commands");
   apiroute = Routes.applicationCommands(client_id);
 }
+console.log(`WILL PUT: ${apiroute}`);
 
 rest.put(
   apiroute,
   { body: commands }
 ).then(() => {
-  console.log(`PUT: ${apiroute}`);
+  console.log(`SUCCESS PUT: ${apiroute}`);
   console.log('Commands updated successfully');
 }).catch(err => {
   console.error(`Error registering slash commands ${err}`);
