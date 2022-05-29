@@ -7,11 +7,15 @@ exports.pickSafely = function (targetIndex, sourceList) {
 }
 
 /**
- * Randomize an integer between 0 and max
- * @param {number} max 
+ * Randomize an integer between min and max
+ * 
+ * @param {number} max max, not inclusive
+ * @param {number} min defaults to 0, inclusive
  */
-exports.randomInt = function (max) {
-  return Math.floor(Math.random() * Math.floor(max));
+exports.randomInt = function (max, min = 0) {
+  const roundMin = Math.ceil(min)
+  const roundMax = Math.ceil(max);
+  return Math.floor(Math.random() * (roundMax - roundMin) + roundMin);
 }
 
 /**
