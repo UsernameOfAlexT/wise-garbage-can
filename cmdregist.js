@@ -3,6 +3,7 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
 const envutils = require('./envutils.js');
+envutils.setupEnvVars();
 const bot_token = process.env.BOT_TOKEN;
 const client_id = process.env.CLIENT_ID;
 

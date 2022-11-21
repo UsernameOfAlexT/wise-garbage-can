@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "test": "mocha",
-    "start": "node app.js"
+    "start": "node app.js",
+    "prestart": "node cmdregist.js"
   },
   "repository": {
     "type": "git",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "chai-as-promised": "^7.1.1",
+    "dotenv": "^16.0.3",
     "mocha": "^9.2.0"
   },
   "engines": {

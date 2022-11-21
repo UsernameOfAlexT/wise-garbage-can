@@ -3,10 +3,11 @@ const fs = require('fs');
 const { Client, Intents, Collection, Permissions } = require('discord.js');
 const { InteractionReply } = require('./support/intereply.js');
 const envutils = require('./envutils.js');
+envutils.setupEnvVars();
+const bot_token = process.env.BOT_TOKEN;
 const utils = require('./utils.js');
 const phraserobj = require('./datalists/statusphraseobjs.js');
 const phraser = require('./datalists/statusphraser.js');
-const bot_token = process.env.BOT_TOKEN;
 
 const intentsUsed = new Intents();
 intentsUsed.add(

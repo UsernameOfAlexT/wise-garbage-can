@@ -6,6 +6,15 @@ const HIGH_LOG_ALIASES = ['high', 'detailed', 'verbose'];
 const LOG_LEVEL = process.env.LOGGING_LEVEL || 'standard';
 const GUILD_ID = process.env.GUILD_ID || '';
 
+exports.setupEnvVars = () => {
+  try {
+    require('dotenv').config();
+    console.log('dotenv found. loading from .env');
+  } catch(e) {
+    console.info('dotenv not found. Environment variables should be set by other methods');
+  }
+}
+
 exports.useDetailedLogging = function() {
   return HIGH_LOG_ALIASES.includes(LOG_LEVEL);
 }
