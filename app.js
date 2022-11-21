@@ -20,6 +20,7 @@ intentsUsed.add(
 const client = new Client({ intents: intentsUsed });
 const cooldowns = new Collection();
 let voiceStateLastUpdate = Date.now();
+let randactivity;
 const VOICE_MIN_CD = 5000; // 5 seconds min between updates
 
 client.commands = new Collection();
@@ -36,7 +37,7 @@ client.once('ready', () => {
   console.log('I am ready to fight robots');
 
   // roll a random status upon each startup. For fun.
-  const randactivity = phraserobj.chain(phraser.standard_list, 4);
+  randactivity = phraserobj.chain(phraser.standard_list, 4);
   client.user.setActivity(randactivity, { type: utils.pickRandomly(phraser.relevant_start_statuses) });
 });
 
@@ -132,3 +133,22 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 });
 
 client.login(bot_token);
+
+// TODO HACKY WEBSERVER STUFF HERE, should move to a proper home
+
+const express = require("express");
+const app = express();
+const port = process.env.PORT || 3001;
+
+app.get("/", (req, res) => res.type('html').send(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <section>
+      Activity of the interval is: ${randactivity || "undecided"}
+    </section>
+  </body>
+</html>
+`));
+
+app.listen(port, () => console.log(`Web Service listening on port ${port}`))
